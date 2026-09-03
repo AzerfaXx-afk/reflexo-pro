@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Réserver une séance | Stéphanie Bouteloup Réflexologue & Massages</title>
+    <meta name="description" content="Prenez rendez-vous en ligne pour votre séance de réflexologie, massage relaxant ou soin visage à Peymeinade avec Stéphanie Bouteloup.">
+    
+    <!-- PWA / Favicon -->
+    <link rel="apple-touch-icon" href="assets/icon-pro-512.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-pro-192.png">
+    <link rel="shortcut icon" href="favicon.ico">
+    <meta name="theme-color" content="#1F383E">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --primary: #5F9EA0;
+            --primary-dark: #1F383E;
+            --primary-light: #EBF4F4;
+            --accent-gold: #C5A880;
+            --accent-gold-light: #FAF6F0;
+            --bg-page: #F9F8F6;
+            --bg-card: #FFFFFF;
+            --text-dark: #1F383E;
+            --text-muted: #6B7B80;
+            --border-color: #E6ECEC;
+            --shadow-sm: 0 4px 14px rgba(31, 56, 62, 0.05);
+            --shadow-md: 0 12px 30px rgba(31, 56, 62, 0.08);
+            --shadow-lg: 0 20px 45px rgba(31, 56, 62, 0.12);
+            --font-main: 'Montserrat', sans-serif;
+            --font-serif: 'Playfair Display', serif;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        /* ===== HEADER LUXE ===== */
+        .portal-header {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 14px 20px;
+        }
+
+        .header-container {
+            max-width: 860px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-block {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .brand-logo {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(31, 56, 62, 0.1);
+        }
+
+        .brand-info h1 {
+            font-family: var(--font-serif);
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--primary-dark);
+            line-height: 1.2;
+        }
+
+        .brand-info p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .cabinet-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        /* ===== HERO BANNER ===== */
+        .hero-banner {
+            max-width: 860px;
+            margin: 28px auto 20px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .hero-banner h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+            font-style: italic;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .hero-banner p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            max-width: 580px;
+            margin: 0 auto;
+        }
+
+        /* ===== STEPPER WIZARD ===== */
+        .booking-stepper {
+            max-width: 860px;
+            margin: 20px auto 30px auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #EAEFEF;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .step-item.active {
+            color: var(--primary-dark);
+        }
+
+        .step-item.active .step-num {
+            background: var(--primary-dark);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(31, 56, 62, 0.25);
+        }
+
+        .step-item.completed .step-num {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .step-divider {
+            width: 30px;
+            height: 2px;
+            background: #EAEFEF;
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .portal-main {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* STEP CARDS */
+        .step-section {
+            display: none;
+            animation: fadeInStep 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .step-section.active {
+            display: block;
+        }
+
+        @keyframes fadeInStep {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* CATEGORIES FILTER */
+        .category-filter {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            scrollbar-width: none;
+        }
+        .category-filter::-webkit-scrollbar { display: none; }
+
+        .cat-pill {
+            padding: 8px 18px;
+            border-radius: 30px;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .cat-pill.active {
+            background: var(--primary-dark);
+            color: #fff;
+            border-color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(31, 56, 62, 0.15);
+        }
+
+        /* SERVICES GRID */
+        .services-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .service-select-card {
+            background: #fff;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-color);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .service-select-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .service-select-card.selected {
+            border-color: var(--primary);
+            background: #FAFDFD;
+            box-shadow: 0 0 0 3px rgba(95, 158, 160, 0.2), var(--shadow-md);
+        }
+
+        .service-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .service-cat-badge {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .service-price-tag {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .service-card-title {
+            font-family: var(--font-serif);
+            font-size: 1.18rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .service-card-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .service-footer-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid #F0F4F4;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .btn-select-service {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .service-select-card.selected .btn-select-service {
+            background: var(--primary-dark);
+            color: #fff;
+        }
+
+        /* ===== STEP 2 : DATE & CRÉNEAUX ===== */
+        .calendar-picker-wrapper {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+        }
+
+        .date-pills-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 8px 4px;
+            margin-bottom: 24px;
+            scrollbar-width: none;
+        }
+        .date-pills-row::-webkit-scrollbar { display: none; }
+
+        .date-pill {
+            flex: 0 0 74px;
+            height: 84px;
+            border-radius: 16px;
+            border: 1.5px solid var(--border-color);
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .date-pill:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .date-pill.active {
+            background: var(--primary-dark);
+            color: #fff;
+            border-color: var(--primary-dark);
+            box-shadow: 0 6px 16px rgba(31, 56, 62, 0.25);
+        }
+
+        .date-pill .day-name {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            opacity: 0.85;
+        }
+
+        .date-pill .day-number {
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .date-pill .month-name {
+            font-size: 0.68rem;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .slots-container-header {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+            gap: 10px;
+        }
+
+        .time-slot-btn {
+            padding: 12px 6px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: #FDFEFE;
+            color: var(--primary-dark);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .time-slot-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .time-slot-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(95, 158, 160, 0.3);
+        }
+
+        /* ===== STEP 3 : COORDONNÉES CLIENTE ===== */
+        .client-form-card {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .form-group .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            background: #FAFCFC;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .form-group .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(95, 158, 160, 0.15);
+            background: #fff;
+        }
+
+        /* SELECTED SUMMARY CARD (IN STEP 2 & 3) */
+        .booking-summary-strip {
+            background: var(--primary-light);
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(95, 158, 160, 0.2);
+        }
+
+        .summary-details {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .summary-details i {
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+        }
+
+        .summary-title {
+            font-weight: 700;
+            color: var(--primary-dark);
+            font-size: 0.98rem;
+        }
+
+        .summary-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* NAVIGATION BUTTONS */
+        .wizard-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            gap: 16px;
+        }
+
+        .btn-portal {
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-portal-back {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-portal-back:hover {
+            background: #fff;
+            color: var(--text-dark);
+        }
+
+        .btn-portal-next {
+            background: var(--primary-dark);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(31, 56, 62, 0.25);
+            margin-left: auto;
+        }
+
+        .btn-portal-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(31, 56, 62, 0.35);
+        }
+
+        .btn-portal-next:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== STEP 4 : CONFIRMATION SCREEN ===== */
+        .confirmation-card {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .confirm-check-bubble {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: #E8F5E9;
+            color: #2E7D32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 8px 24px rgba(46, 125, 50, 0.2);
+            animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .confirmation-card h3 {
+            font-family: var(--font-serif);
+            font-size: 1.8rem;
+            font-style: italic;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .recap-box {
+            background: var(--primary-light);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 24px 0;
+            text-align: left;
+            border: 1px solid rgba(95, 158, 160, 0.2);
+        }
+
+        .recap-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed rgba(95, 158, 160, 0.25);
+        }
+        .recap-row:last-child {
+            border-bottom: none;
+            padding-top: 12px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .cabinet-address-notice {
+            background: #FAF8F5;
+            border: 1px solid #EAE4D8;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #5D4037;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+        }
+
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .cabinet-badge { display: none; }
+            .booking-stepper { gap: 6px; }
+            .step-item span:not(.step-num) { display: none; }
+            .step-divider { width: 16px; }
+            .confirmation-card { padding: 28px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="portal-header">
+        <div class="header-container">
+            <a href="https://www.reflexo-grasse.fr" class="brand-block" title="Retourner au site principal">
+                <img src="assets/icon-pro-512.png" alt="Stéphanie Bouteloup" class="brand-logo">
+                <div class="brand-info">
+                    <h1>Stéphanie Bouteloup</h1>
+                    <p>Réflexologue RNCP & Praticienne Massages</p>
+                </div>
+            </a>
+            <div class="cabinet-badge">
+                <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i>
+                <span>Peymeinade (06530)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Title -->
+    <div class="hero-banner">
+        <h2>Prendre Rendez-vous en Ligne</h2>
+        <p>Sélectionnez votre soin, choisissez votre jour et créneau horaire. Votre réservation est instantanément confirmée.</p>
+    </div>
+
+    <!-- Stepper -->
+    <div class="booking-stepper">
+        <div class="step-item active" id="stepper1">
+            <span class="step-num">1</span>
+            <span>Soin</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item" id="stepper2">
+            <span class="step-num">2</span>
+            <span>Date & Heure</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item" id="stepper3">
+            <span class="step-num">3</span>
+            <span>Coordonnées</span>
+        </div>
+    </div>
+
+    <!-- Main Booking Body -->
+    <main class="portal-main">
+
+        <!-- ========================================================================= 
+             ÉTAPE 1 : CHOIX DE LA PRESTATION
+             ========================================================================= -->
+        <section class="step-section active" id="stepSection1">
+            <div class="category-filter" id="catFilterRow">
+                <button class="cat-pill active" data-cat="all">Tous les soins</button>
+            </div>
+
+            <div class="services-selection-grid" id="publicServicesGrid">
+                <!-- Services injectés dynamiquement -->
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                    <p>Chargement des soins disponibles...</p>
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button type="button" class="btn-portal btn-portal-next" id="btnNextToStep2" disabled>
+                    <span>Continuer vers la date</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================================= 
+             ÉTAPE 2 : DATE & CRÉNEAU
+             ========================================================================= -->
+        <section class="step-section" id="stepSection2">
+            <div class="booking-summary-strip">
+                <div class="summary-details">
+                    <i class="fa-solid fa-spa"></i>
+                    <div>
+                        <div class="summary-title" id="recapServiceTitle">Soin sélectionné</div>
+                        <div class="summary-sub" id="recapServiceSub">60 minutes • 80 €</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-text-link" onclick="goToStep(1)" style="font-size: 0.85rem; color: var(--primary-dark); font-weight: 600; text-decoration: underline; background: none; border: none; cursor: pointer;">Modifier</button>
+            </div>
+
+            <div class="calendar-picker-wrapper">
+                <div class="slots-container-header">
+                    <i class="fa-regular fa-calendar" style="color: var(--primary);"></i>
+                    <span>Choisissez votre jour</span>
+                </div>
+                <div class="date-pills-row" id="datePillsRow">
+                    <!-- Dates injectées par JS -->
+                </div>
+
+                <div class="slots-container-header" style="margin-top: 20px;">
+                    <i class="fa-regular fa-clock" style="color: var(--primary);"></i>
+                    <span>Créneaux disponibles le <strong id="selectedDateLabel">...</strong></span>
+                </div>
+                <div class="time-slots-grid" id="timeSlotsGrid">
+                    <!-- Créneaux injectés par JS -->
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button type="button" class="btn-portal btn-portal-back" onclick="goToStep(1)">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Retour aux soins</span>
+                </button>
+                <button type="button" class="btn-portal btn-portal-next" id="btnNextToStep3" disabled>
+                    <span>Continuer</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================================= 
+             ÉTAPE 3 : COORDONNÉES DE LA CLIENTE
+             ========================================================================= -->
+        <section class="step-section" id="stepSection3">
+            <div class="booking-summary-strip">
+                <div class="summary-details">
+                    <i class="fa-regular fa-calendar-check"></i>
+                    <div>
+                        <div class="summary-title" id="recapDateTimeTitle">Mercredi 9 Septembre à 14h00</div>
+                        <div class="summary-sub" id="recapDateTimeSub">Réflexologie Plantaire • 60 min • 80 €</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-text-link" onclick="goToStep(2)" style="font-size: 0.85rem; color: var(--primary-dark); font-weight: 600; text-decoration: underline; background: none; border: none; cursor: pointer;">Changer</button>
+            </div>
+
+            <div class="client-form-card">
+                <form id="publicBookingForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clientFirstname">Prénom *</label>
+                            <input type="text" id="clientFirstname" class="form-control" placeholder="Votre prénom" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="clientLastname">Nom *</label>
+                            <input type="text" id="clientLastname" class="form-control" placeholder="Votre nom" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clientPhone">Numéro de téléphone mobile *</label>
+                            <input type="tel" id="clientPhone" class="form-control" placeholder="06 12 34 56 78" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="clientEmail">Adresse e-mail (pour confirmation)</label>
+                            <input type="email" id="clientEmail" class="form-control" placeholder="votre.email@exemple.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clientNotes">Précisions ou motif de consultation (facultatif)</label>
+                        <textarea id="clientNotes" class="form-control" rows="3" placeholder="Ex: Douleurs de dos, stress, première séance..."></textarea>
+                    </div>
+
+                    <div class="cabinet-address-notice">
+                        <i class="fa-solid fa-circle-info" style="font-size: 1.2rem; color: var(--primary);"></i>
+                        <div>
+                            <strong>Séance en cabinet à Peymeinade :</strong> 37 Avenue de Boutiny, 06530 Peymeinade. Règlement sur place (espèces ou chèque).
+                        </div>
+                    </div>
+
+                    <div class="wizard-actions">
+                        <button type="button" class="btn-portal btn-portal-back" onclick="goToStep(2)">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Modifier le créneau</span>
+                        </button>
+                        <button type="submit" class="btn-portal btn-portal-next" id="btnConfirmBooking">
+                            <i class="fa-solid fa-check"></i>
+                            <span id="btnConfirmText">Confirmer ma réservation</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ========================================================================= 
+             ÉTAPE 4 : CONFIRMATION INSTANTANÉE
+             ========================================================================= -->
+        <section class="step-section" id="stepSection4">
+            <div class="confirmation-card">
+                <div class="confirm-check-bubble">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h3>Votre rendez-vous est confirmé !</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">
+                    Merci <span id="confirmClientName" style="font-weight: 600; color: var(--primary-dark);"></span>. Stéphanie vous attend avec plaisir au cabinet.
+                </p>
+
+                <div class="recap-box">
+                    <div class="recap-row">
+                        <span style="color: var(--text-muted);">Soin</span>
+                        <strong id="confirmService">Réflexologie Plantaire</strong>
+                    </div>
+                    <div class="recap-row">
+                        <span style="color: var(--text-muted);">Date & Heure</span>
+                        <strong id="confirmDate">Mercredi 9 Septembre à 14h00</strong>
+                    </div>
+                    <div class="recap-row">
+                        <span style="color: var(--text-muted);">Lieu</span>
+                        <span>Cabinet Peymeinade (37 Av. de Boutiny)</span>
+                    </div>
+                    <div class="recap-row">
+                        <span style="color: var(--text-muted);">Durée</span>
+                        <span id="confirmDuration">60 minutes</span>
+                    </div>
+                    <div class="recap-row">
+                        <span>Tarif à régler sur place</span>
+                        <span id="confirmPrice">80 €</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-portal btn-portal-back" onclick="window.print()" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-print"></i> Imprimer mon récapitulatif
+                    </button>
+                    <a href="https://www.reflexo-grasse.fr" class="btn-portal btn-portal-next" style="font-size: 0.88rem; text-decoration: none;">
+                        <i class="fa-solid fa-house"></i> Retour au site
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Client Booking Logic Script -->
+    <script>
+        const SUPABASE_URL = 'https://lydfqknveaifbqqyqbts.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_u5x6RfeNOb37KkcNeVGXfA_t36pxZjC';
+        let supabaseClient = null;
+
+        if (window.supabase && window.supabase.createClient) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+
+        // State
+        let availableServices = [];
+        let existingAppointments = [];
+        let existingBlockedSlots = [];
+        let cabinetSettings = {
+            schedule: [
+                { day: 'Lundi', open: true, start: '08:30', end: '19:00' },
+                { day: 'Mardi', open: true, start: '08:30', end: '19:00' },
+                { day: 'Mercredi', open: true, start: '08:30', end: '19:00' },
+                { day: 'Jeudi', open: true, start: '08:30', end: '19:00' },
+                { day: 'Vendredi', open: true, start: '08:30', end: '19:00' },
+                { day: 'Samedi', open: true, start: '09:00', end: '18:00' },
+                { day: 'Dimanche', open: false, start: '09:00', end: '18:00' }
+            ],
+            bufferTime: 15
+        };
+
+        let selectedService = null;
+        let selectedDate = null;
+        let selectedTime = null;
+
+        // Default Fallback Services if database is freshly initialized
+        const DEFAULT_SERVICES = [
+            { id: 'srv_def_1', name: 'Réflexologie Plantaire', category: 'Réflexologie', duration: 60, price: 65, description: 'Soin holistique ciblant les zones réflexes sous la voûte plantaire pour rétablir l’équilibre énergétique et relâcher les tensions profondes.' },
+            { id: 'srv_def_2', name: 'Massage Sur-Mesure Relaxant', category: 'Massages', duration: 60, price: 80, description: 'Alliance bienveillante de techniques enveloppantes et décontractantes, adaptées à vos besoins du moment.' },
+            { id: 'srv_def_3', name: 'Massage Kobido du Visage', category: 'Kobido / Visage', duration: 60, price: 75, description: 'Rituel ancestral japonais stimulant la jeunesse de la peau, la microcirculation et l’éclat naturel du teint.' },
+            { id: 'srv_def_4', name: 'Soin Signature Combiné', category: 'Soins Combinés', duration: 90, price: 110, description: 'L’expérience ultime associant réflexologie plantaire et massage relaxant complet pour un lâcher-prise absolu.' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDataFromSupabase();
+            renderServices();
+            renderDates();
+            setupForm();
+        });
+
+        async function loadDataFromSupabase() {
+            if (!supabaseClient) {
+                availableServices = DEFAULT_SERVICES;
+                return;
+            }
+
+            try {
+                const [srvRes, apptRes, blkRes, setRes] = await Promise.all([
+                    supabaseClient.from('services').select('*').order('created_at', { ascending: true }),
+                    supabaseClient.from('appointments').select('*'),
+                    supabaseClient.from('blocked_slots').select('*'),
+                    supabaseClient.from('cabinet_settings').select('*').eq('id', 'main').maybeSingle()
+                ]);
+
+                if (srvRes.data && srvRes.data.length > 0) {
+                    availableServices = srvRes.data;
+                } else {
+                    availableServices = DEFAULT_SERVICES;
+                }
+
+                if (apptRes.data) existingAppointments = apptRes.data;
+                if (blkRes.data) existingBlockedSlots = blkRes.data;
+                if (setRes.data && setRes.data.schedule) {
+                    cabinetSettings.schedule = setRes.data.schedule;
+                    if (setRes.data.buffer_time !== undefined) cabinetSettings.bufferTime = setRes.data.buffer_time;
+                }
+            } catch (err) {
+                console.warn('Supabase fetch fallback:', err);
+                availableServices = DEFAULT_SERVICES;
+            }
+        }
+
+        function renderServices() {
+            const grid = document.getElementById('publicServicesGrid');
+            const catRow = document.getElementById('catFilterRow');
+            if (!grid) return;
+
+            // Render categories
+            const cats = ['all', ...new Set(availableServices.map(s => s.category || 'Soins'))];
+            catRow.innerHTML = cats.map(c => `
+                <button class="cat-pill ${c === 'all' ? 'active' : ''}" onclick="filterCategory('${c}', this)">
+                    ${c === 'all' ? 'Tous les soins' : c}
+                </button>
+            `).join('');
+
+            displayServicesList(availableServices);
+        }
+
+        function filterCategory(cat, btn) {
+            document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (cat === 'all') {
+                displayServicesList(availableServices);
+            } else {
+                displayServicesList(availableServices.filter(s => s.category === cat));
+            }
+        }
+
+        function displayServicesList(list) {
+            const grid = document.getElementById('publicServicesGrid');
+            if (list.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 30px;">Aucun soin dans cette catégorie.</p>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(s => `
+                <div class="service-select-card ${selectedService?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
+                    <div>
+                        <div class="service-header-top">
+                            <span class="service-cat-badge">${s.category || 'Soin'}</span>
+                            <span class="service-price-tag">${s.price} €</span>
+                        </div>
+                        <div class="service-card-title">${s.name}</div>
+                        <div class="service-card-desc">${s.description || 'Prestation de bien-être en cabinet.'}</div>
+                    </div>
+                    <div class="service-footer-meta">
+                        <span><i class="fa-regular fa-clock"></i> ${s.duration} min</span>
+                        <button class="btn-select-service" type="button">
+                            ${selectedService?.id === s.id ? '✓ Sélectionné' : 'Choisir'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectService(serviceId) {
+            selectedService = availableServices.find(s => s.id === serviceId);
+            if (!selectedService) return;
+
+            document.querySelectorAll('.service-select-card').forEach(c => c.classList.remove('selected'));
+            displayServicesList(availableServices);
+
+            const nextBtn = document.getElementById('btnNextToStep2');
+            if (nextBtn) {
+                nextBtn.disabled = false;
+                nextBtn.onclick = () => goToStep(2);
+            }
+
+            // Update recaps
+            document.getElementById('recapServiceTitle').textContent = selectedService.name;
+            document.getElementById('recapServiceSub').textContent = `${selectedService.duration} minutes • ${selectedService.price} €`;
+        }
+
+        /* ===== GESTION DES DATES ET CRÉNEAUX ===== */
+        function renderDates() {
+            const row = document.getElementById('datePillsRow');
+            if (!row) return;
+
+            const daysFr = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+            const monthsFr = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+
+            const pills = [];
+            const today = new Date();
+
+            for (let i = 0; i < 21; i++) {
+                const d = new Date(today);
+                d.setDate(d.getDate() + i);
+
+                const iso = d.toISOString().split('T')[0];
+                const dayIndex = d.getDay(); // 0 is Sunday
+                const dayName = daysFr[dayIndex];
+                const dayNum = d.getDate();
+                const monthName = monthsFr[d.getMonth()];
+
+                // Check cabinet day status
+                const scheduleDayName = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][dayIndex];
+                const sched = cabinetSettings.schedule.find(s => s.day === scheduleDayName);
+                if (sched && !sched.open) continue; // skip closed days
+
+                pills.push(`
+                    <div class="date-pill ${pills.length === 0 ? 'active' : ''}" data-iso="${iso}" onclick="selectDate('${iso}', this)">
+                        <span class="day-name">${dayName}</span>
+                        <span class="day-number">${dayNum}</span>
+                        <span class="month-name">${monthName}</span>
+                    </div>
+                `);
+            }
+
+            row.innerHTML = pills.join('');
+
+            // Auto-select first available day
+            const firstPill = row.querySelector('.date-pill');
+            if (firstPill) {
+                const iso = firstPill.getAttribute('data-iso');
+                selectDate(iso, firstPill);
+            }
+        }
+
+        function selectDate(iso, pillEl) {
+            document.querySelectorAll('.date-pill').forEach(p => p.classList.remove('active'));
+            if (pillEl) pillEl.classList.add('active');
+
+            selectedDate = iso;
+            selectedTime = null;
+            document.getElementById('btnNextToStep3').disabled = true;
+
+            const dateObj = new Date(iso + 'T00:00:00');
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            const label = dateObj.toLocaleDateString('fr-FR', options);
+            document.getElementById('selectedDateLabel').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+
+            renderTimeSlots(iso);
+        }
+
+        function renderTimeSlots(iso) {
+            const grid = document.getElementById('timeSlotsGrid');
+            if (!grid) return;
+
+            const dateObj = new Date(iso + 'T00:00:00');
+            const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+            const dayConfig = cabinetSettings.schedule.find(s => s.day === dayNames[dateObj.getDay()]);
+
+            if (!dayConfig || !dayConfig.open) {
+                grid.innerHTML = `<p style="grid-column: 1 / -1; color: var(--text-muted); font-size: 0.88rem;">Le cabinet est fermé ce jour-là.</p>`;
+                return;
+            }
+
+            // Parse hours
+            const [startH, startM] = dayConfig.start.split(':').map(Number);
+            const [endH, endM] = dayConfig.end.split(':').map(Number);
+            const startMinutes = startH * 60 + startM;
+            const endMinutes = endH * 60 + endM;
+
+            const serviceDuration = selectedService ? Number(selectedService.duration) : 60;
+            const buffer = Number(cabinetSettings.bufferTime) || 15;
+            const step = 30; // standard 30-min grid intervals
+
+            // Existing bookings for this date
+            const dayAppts = existingAppointments.filter(a => a.date === iso && a.status !== 'cancelled');
+            const dayBlocks = existingBlockedSlots.filter(b => b.date === iso);
+
+            const availableSlots = [];
+
+            for (let timeMin = startMinutes; timeMin + serviceDuration <= endMinutes; timeMin += step) {
+                const timeSlotEnd = timeMin + serviceDuration;
+
+                // Check collision with appointments
+                const collidesAppt = dayAppts.some(a => {
+                    const [ah, am] = a.time.split(':').map(Number);
+                    const aStart = ah * 60 + am;
+                    const aEnd = aStart + Number(a.duration) + buffer;
+                    return (timeMin < aEnd && timeSlotEnd + buffer > aStart);
+                });
+
+                // Check collision with blocked pauses
+                const collidesBlock = dayBlocks.some(b => {
+                    const [bh, bm] = b.time.split(':').map(Number);
+                    const bStart = bh * 60 + bm;
+                    const bEnd = bStart + Number(b.duration);
+                    return (timeMin < bEnd && timeSlotEnd > bStart);
+                });
+
+                if (!collidesAppt && !collidesBlock) {
+                    const h = Math.floor(timeMin / 60).toString().padStart(2, '0');
+                    const m = (timeMin % 60).toString().padStart(2, '0');
+                    availableSlots.push(`${h}:${m}`);
+                }
+            }
+
+            if (availableSlots.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1 / -1; color: var(--text-muted); font-size: 0.88rem; padding: 12px 0;">Tous les créneaux sont réservés pour cette journée. Essayez le jour suivant.</p>`;
+                return;
+            }
+
+            grid.innerHTML = availableSlots.map(t => `
+                <button class="time-slot-btn" type="button" onclick="selectTime('${t}', this)">
+                    ${t}
+                </button>
+            `).join('');
+        }
+
+        function selectTime(timeStr, btn) {
+            document.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedTime = timeStr;
+
+            const nextBtn = document.getElementById('btnNextToStep3');
+            nextBtn.disabled = false;
+            nextBtn.onclick = () => {
+                const dateObj = new Date(selectedDate + 'T00:00:00');
+                const label = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+                document.getElementById('recapDateTimeTitle').textContent = `${label.charAt(0).toUpperCase() + label.slice(1)} à ${selectedTime}`;
+                document.getElementById('recapDateTimeSub').textContent = `${selectedService.name} • ${selectedService.duration} min • ${selectedService.price} €`;
+                goToStep(3);
+            };
+        }
+
+        /* ===== NAVIGATION STEPS ===== */
+        function goToStep(stepNumber) {
+            document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`stepSection${stepNumber}`).classList.add('active');
+
+            // Stepper icons update
+            for (let i = 1; i <= 3; i++) {
+                const stepEl = document.getElementById(`stepper${i}`);
+                if (i < stepNumber) {
+                    stepEl.className = 'step-item completed';
+                } else if (i === stepNumber) {
+                    stepEl.className = 'step-item active';
+                } else {
+                    stepEl.className = 'step-item';
+                }
+            }
+
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+
+        /* ===== CONFIRMATION & SUBMIT ===== */
+        function setupForm() {
+            const form = document.getElementById('publicBookingForm');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const firstname = document.getElementById('clientFirstname').value.trim();
+                const lastname = document.getElementById('clientLastname').value.trim();
+                const fullName = `${firstname} ${lastname}`.trim();
+                const phone = document.getElementById('clientPhone').value.trim();
+                const email = document.getElementById('clientEmail').value.trim();
+                const notes = document.getElementById('clientNotes').value.trim();
+
+                if (!selectedService || !selectedDate || !selectedTime) {
+                    alert('Veuillez sélectionner un soin, une date et une heure.');
+                    return;
+                }
+
+                const submitBtn = document.getElementById('btnConfirmBooking');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Confirmation en cours...';
+
+                const apptId = 'appt_' + Date.now();
+                const clientId = 'cli_' + Date.now();
+
+                const newAppointment = {
+                    id: apptId,
+                    client_id: clientId,
+                    client_name: fullName,
+                    client_phone: phone,
+                    client_email: email,
+                    service_id: selectedService.id,
+                    service_name: selectedService.name,
+                    duration: Number(selectedService.duration),
+                    price: Number(selectedService.price),
+                    date: selectedDate,
+                    time: selectedTime,
+                    notes: notes || 'Réservation effectuée en ligne',
+                    status: 'confirmed',
+                    color_bg: selectedService.color_bg || '#E8EAF6',
+                    color_border: selectedService.color_border || '#5F9EA0',
+                    color_text: selectedService.color_text || '#1F383E'
+                };
+
+                // Save into Supabase
+                if (supabaseClient) {
+                    try {
+                        // 1. Client
+                        await supabaseClient.from('clients').upsert({
+                            id: clientId,
+                            name: fullName,
+                            phone: phone,
+                            email: email,
+                            notes: notes
+                        });
+
+                        // 2. Appointment
+                        await supabaseClient.from('appointments').insert(newAppointment);
+                    } catch (err) {
+                        console.error('Booking sync error:', err);
+                    }
+                }
+
+                // Show Confirmation Screen
+                document.getElementById('confirmClientName').textContent = firstname;
+                document.getElementById('confirmService').textContent = selectedService.name;
+                const dObj = new Date(selectedDate + 'T00:00:00');
+                const dFormatted = dObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+                document.getElementById('confirmDate').textContent = `${dFormatted.charAt(0).toUpperCase() + dFormatted.slice(1)} à ${selectedTime}`;
+                document.getElementById('confirmDuration').textContent = `${selectedService.duration} minutes`;
+                document.getElementById('confirmPrice').textContent = `${selectedService.price} €`;
+
+                document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+                document.getElementById('stepSection4').classList.add('active');
+                window.scrollTo({ top: 120, behavior: 'smooth' });
+            });
+        }
+    </script>
+</body>
+</html>

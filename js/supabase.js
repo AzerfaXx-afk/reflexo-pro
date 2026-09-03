@@ -253,6 +253,71 @@ class SupabaseService {
             console.warn('Sync settings failed:', e);
         }
     }
+
+    /* AUTHENTIFICATION */
+    async getCurrentUser() {
+        if (!this.client) return null;
+        try {
+            const { data: { user }, error } = await this.client.auth.getUser();
+            if (error) return null;
+            return user;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async getSession() {
+        if (!this.client) return null;
+        try {
+            const { data: { session } } = await this.client.auth.getSession();
+            return session;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async signInWithPassword(email, password) {
+        if (!this.client) throw new Error('Supabase non initialisé');
+        const { data, error } = await this.client.auth.signInWithPassword({
+            email,
+            password
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async signUp(email, password) {
+        if (!this.client) throw new Error('Supabase non initialisé');
+        const { data, error } = await this.client.auth.signUp({
+            email,
+            password
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async signInWithOtp(email) {
+        if (!this.client) throw new Error('Supabase non initialisé');
+        const { data, error } = await this.client.auth.signInWithOtp({
+            email,
+            options: {
+                emailRedirectTo: window.location.origin + window.location.pathname
+            }
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async signOut() {
+        if (!this.client) return;
+        await this.client.auth.signOut();
+    }
+
+    onAuthStateChange(callback) {
+        if (!this.client) return { data: { subscription: { unsubscribe: () => {} } } };
+        return this.client.auth.onAuthStateChange(callback);
+    }
 }
 
 window.supabaseService = new SupabaseService();
+

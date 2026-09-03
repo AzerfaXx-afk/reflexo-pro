@@ -161,7 +161,7 @@ const PRESET_COLORS = [
 
 class StephanieProApp {
     constructor() {
-        this.storageKey = 'stephanie_pro_data_v1';
+        this.storageKey = 'stephanie_pro_data_v2';
         this.currentView = 'dashboard';
         this.data = this.loadData();
         this.selectedImage = PRESET_IMAGES[0];
@@ -211,6 +211,7 @@ class StephanieProApp {
         this.setupModals();
         this.updateHeaderDate();
         this.updateCabinetLiveStatus();
+        this.setupAuth();
 
         // Rafraîchir le statut en direct toutes les 30 secondes
         setInterval(() => this.updateCabinetLiveStatus(), 30000);
@@ -224,6 +225,265 @@ class StephanieProApp {
         }
     }
 
+    openAuthModal(preferredMode = 'register') {
+        const overlay = document.getElementById('authOverlay');
+        if (!overlay) return;
+        overlay.style.display = 'flex';
+        setTimeout(() => overlay.classList.remove('hidden'), 10);
+
+        if (preferredMode === 'register') {
+            document.getElementById('tabRegisterBtn')?.click();
+        } else {
+            document.getElementById('tabLoginBtn')?.click();
+        }
+    }
+
+    closeAuthModal() {
+        const overlay = document.getElementById('authOverlay');
+        if (!overlay) return;
+        overlay.classList.add('hidden');
+        setTimeout(() => overlay.style.display = 'none', 400);
+    }
+
+    async setupAuth() {
+        const overlay = document.getElementById('authOverlay');
+        const form = document.getElementById('authForm');
+        const alertBox = document.getElementById('authAlert');
+        const tabLogin = document.getElementById('tabLoginBtn');
+        const tabRegister = document.getElementById('tabRegisterBtn');
+        const submitText = document.getElementById('btnAuthText');
+        const accountTrigger = document.getElementById('sidebarAccountTrigger');
+        const userCard = document.getElementById('sidebarUserCard');
+        const userEmailEl = document.getElementById('userAccountEmail');
+        const userNameEl = document.getElementById('userAccountName');
+        const userAvatarEl = document.getElementById('userAvatarInitials');
+        const btnLogout = document.getElementById('btnLogout');
+        const btnTogglePass = document.getElementById('btnTogglePassword');
+        const passInput = document.getElementById('authPassword');
+        const passGroup = document.getElementById('authPasswordGroup');
+        const btnMagicOption = document.getElementById('btnMagicLinkOption');
+        const btnMagicSubmit = document.getElementById('btnMagicSubmit');
+        const mobileAccountText = document.getElementById('mobileAccountText');
+
+        let authMode = 'register';
+        let magicLinkMode = false;
+
+        // Toggle Password visibility
+        btnTogglePass?.addEventListener('click', () => {
+            const isPassword = passInput.type === 'password';
+            passInput.type = isPassword ? 'text' : 'password';
+            const icon = document.getElementById('eyeIcon');
+            if (icon) icon.className = isPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        });
+
+        // Toggle Magic Link mode
+        btnMagicOption?.addEventListener('click', () => {
+            magicLinkMode = !magicLinkMode;
+            if (magicLinkMode) {
+                if (passGroup) passGroup.style.display = 'none';
+                document.getElementById('btnAuthSubmit').style.display = 'none';
+                if (btnMagicSubmit) btnMagicSubmit.style.display = 'flex';
+                btnMagicOption.textContent = 'Utiliser un mot de passe';
+            } else {
+                if (passGroup) passGroup.style.display = 'block';
+                document.getElementById('btnAuthSubmit').style.display = 'flex';
+                if (btnMagicSubmit) btnMagicSubmit.style.display = 'none';
+                btnMagicOption.textContent = 'Connexion sans mot de passe ?';
+            }
+        });
+
+        // Tabs
+        tabRegister?.addEventListener('click', () => {
+            authMode = 'register';
+            tabRegister.classList.add('active');
+            tabLogin?.classList.remove('active');
+            if (submitText) submitText.textContent = 'Créer mon compte cabinet';
+            if (alertBox) alertBox.style.display = 'none';
+        });
+
+        tabLogin?.addEventListener('click', () => {
+            authMode = 'login';
+            tabLogin.classList.add('active');
+            tabRegister?.classList.remove('active');
+            if (submitText) submitText.textContent = 'Se connecter au cabinet';
+            if (alertBox) alertBox.style.display = 'none';
+        });
+
+        // Check active session
+        const checkSession = async () => {
+            let user = null;
+            if (window.supabaseService) {
+                user = await window.supabaseService.getCurrentUser();
+            }
+            if (!user) {
+                const local = localStorage.getItem('stephanie_auth_user');
+                if (local) {
+                    try { user = JSON.parse(local); } catch(e) {}
+                }
+            }
+
+            if (user) {
+                this.currentUser = user;
+                if (overlay) {
+                    overlay.classList.add('hidden');
+                    setTimeout(() => overlay.style.display = 'none', 400);
+                }
+                if (accountTrigger) accountTrigger.style.display = 'none';
+                if (userCard) {
+                    userCard.style.display = 'flex';
+                    const email = user.email || 'Cabinet Pro';
+                    if (userEmailEl) userEmailEl.textContent = email;
+                    if (userNameEl) userNameEl.textContent = email.split('@')[0];
+                    if (userAvatarEl) userAvatarEl.textContent = (email[0] || 'S').toUpperCase();
+                }
+                if (mobileAccountText) mobileAccountText.textContent = 'Cabinet';
+            } else {
+                if (accountTrigger) accountTrigger.style.display = 'flex';
+                if (userCard) userCard.style.display = 'none';
+                if (mobileAccountText) mobileAccountText.textContent = 'Connexion';
+            }
+        };
+
+        await checkSession();
+
+        // Listen for auth state changes
+        window.supabaseService?.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                this.currentUser = session.user;
+                localStorage.setItem('stephanie_auth_user', JSON.stringify(session.user));
+                checkSession();
+                this.syncWithSupabase();
+            } else if (event === 'SIGNED_OUT') {
+                this.currentUser = null;
+                localStorage.removeItem('stephanie_auth_user');
+                checkSession();
+            }
+        });
+
+        // Magic Link Submit
+        btnMagicSubmit?.addEventListener('click', async () => {
+            const email = document.getElementById('authEmail')?.value.trim();
+            if (!email) {
+                if (alertBox) {
+                    alertBox.className = 'auth-alert error';
+                    alertBox.textContent = 'Veuillez renseigner votre adresse e-mail.';
+                    alertBox.style.display = 'flex';
+                }
+                return;
+            }
+            try {
+                btnMagicSubmit.disabled = true;
+                btnMagicSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi en cours...';
+                await window.supabaseService.signInWithOtp(email);
+                if (alertBox) {
+                    alertBox.className = 'auth-alert success';
+                    alertBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> Lien magique envoyé ! Vérifiez votre boîte mail pour vous connecter.';
+                    alertBox.style.display = 'flex';
+                }
+            } catch (err) {
+                if (alertBox) {
+                    alertBox.className = 'auth-alert error';
+                    alertBox.textContent = err.message || 'Erreur lors de l’envoi du lien.';
+                    alertBox.style.display = 'flex';
+                }
+            } finally {
+                btnMagicSubmit.disabled = false;
+                btnMagicSubmit.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Envoyer un lien magique par mail</span>';
+            }
+        });
+
+        // Form Submit
+        form?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('authEmail')?.value.trim();
+            const password = document.getElementById('authPassword')?.value;
+            const submitBtn = document.getElementById('btnAuthSubmit');
+
+            if (!email || !password) return;
+
+            try {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
+                }
+                if (alertBox) alertBox.style.display = 'none';
+
+                if (authMode === 'register') {
+                    const res = await window.supabaseService.signUp(email, password);
+                    // Check if confirmation email was sent or session was created immediately
+                    if (res?.user && !res?.session) {
+                        alertBox.className = 'auth-alert success';
+                        alertBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> <div><strong>Compte créé !</strong><br>Un email de validation a été envoyé à <strong>${email}</strong>.<br>Cliquez sur le lien reçu dans votre boîte de réception pour valider votre compte, puis connectez-vous.</div>`;
+                        alertBox.style.display = 'flex';
+                        setTimeout(() => {
+                            tabLogin?.click();
+                        }, 2500);
+                        return;
+                    } else if (res?.user) {
+                        this.currentUser = res.user;
+                        localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
+                        this.showToast('Compte créé et connecté !', 'success');
+                        this.closeAuthModal();
+                        await checkSession();
+                        this.syncWithSupabase();
+                    }
+                } else {
+                    const res = await window.supabaseService.signInWithPassword(email, password);
+                    this.currentUser = res.user || { email };
+                    localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
+                    this.showToast(`Connecté avec succès (${email})`, 'success');
+                    this.closeAuthModal();
+                    await checkSession();
+                    this.syncWithSupabase();
+                }
+            } catch (err) {
+                console.error('Auth error:', err);
+                if (alertBox) {
+                    alertBox.className = 'auth-alert error';
+                    const msg = err.message || '';
+                    if (msg.toLowerCase().includes('email not confirmed')) {
+                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div><strong>Email non confirmé</strong><br>Veuillez cliquer sur le lien envoyé dans votre boîte de réception pour activer votre compte.</div>`;
+                    } else if (msg.toLowerCase().includes('invalid login credentials')) {
+                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>Identifiants incorrects ou compte inexistant.<br>Avez-vous d'abord cliqué sur <strong>Créer un compte</strong> ?</div>`;
+                    } else {
+                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>${msg || 'Identifiants incorrects.'}</div>`;
+                    }
+                    alertBox.style.display = 'flex';
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<span id="btnAuthText">${authMode === 'register' ? 'Créer mon compte cabinet' : 'Se connecter au cabinet'}</span><i class="fa-solid fa-arrow-right"></i>`;
+                }
+            }
+        });
+
+        // Logout
+        btnLogout?.addEventListener('click', async () => {
+            this.logout();
+        });
+    }
+
+    async logout() {
+        if (confirm('Voulez-vous vous déconnecter de votre espace cabinet ?')) {
+            await window.supabaseService?.signOut();
+            this.currentUser = null;
+            localStorage.removeItem('stephanie_auth_user');
+            this.data = {
+                services: [],
+                appointments: [],
+                blockedSlots: [],
+                clients: [],
+                notifications: [],
+                categories: ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés']
+            };
+            this.saveData();
+            this.renderAll();
+            await this.setupAuth();
+            this.showToast('Déconnexion effectuée', 'danger');
+        }
+    }
+
     async syncWithSupabase() {
         if (!window.supabaseService) return;
         try {
@@ -232,29 +492,10 @@ class StephanieProApp {
                 console.log('⚡ Supabase Cloud connecté !');
                 const cloudState = await window.supabaseService.loadFullState();
                 if (cloudState) {
-                    if (cloudState.clients && cloudState.clients.length > 0) {
-                        this.data.clients = cloudState.clients;
-                    } else if (this.data.clients && this.data.clients.length > 0) {
-                        this.data.clients.forEach(c => window.supabaseService.upsertClient(c));
-                    }
-
-                    if (cloudState.services && cloudState.services.length > 0) {
-                        this.data.services = cloudState.services;
-                    } else if (this.data.services && this.data.services.length > 0) {
-                        this.data.services.forEach(s => window.supabaseService.upsertService(s));
-                    }
-
-                    if (cloudState.appointments && cloudState.appointments.length > 0) {
-                        this.data.appointments = cloudState.appointments;
-                    } else if (this.data.appointments && this.data.appointments.length > 0) {
-                        this.data.appointments.forEach(a => window.supabaseService.upsertAppointment(a));
-                    }
-
-                    if (cloudState.blockedSlots && cloudState.blockedSlots.length > 0) {
-                        this.data.blockedSlots = cloudState.blockedSlots;
-                    } else if (this.data.blockedSlots && this.data.blockedSlots.length > 0) {
-                        this.data.blockedSlots.forEach(b => window.supabaseService.upsertBlockedSlot(b));
-                    }
+                    this.data.clients = cloudState.clients || [];
+                    this.data.services = cloudState.services || [];
+                    this.data.appointments = cloudState.appointments || [];
+                    this.data.blockedSlots = cloudState.blockedSlots || [];
 
                     if (cloudState.schedule) {
                         this.data.schedule = cloudState.schedule;
@@ -270,7 +511,7 @@ class StephanieProApp {
                 }
             }
         } catch (e) {
-            console.warn('Supabase sync background check:', e);
+            console.warn('Supabase sync check:', e);
         }
     }
 

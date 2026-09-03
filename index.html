@@ -12,7 +12,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Stéphanie Pro">
     <link rel="apple-touch-icon" href="assets/icon-pro-512.png">
-    <link rel="icon" type="image/png" href="assets/icon-pro-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-pro-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-pro-512.png">
+    <link rel="shortcut icon" href="favicon.ico">
 
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +23,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS App -->
-    <link rel="stylesheet" href="css/app.css?v=1">
+    <link rel="stylesheet" href="css/app.css?v=2">
 </head>
 <body>
 
@@ -36,7 +38,7 @@
                     <img src="assets/icon-pro-512.png" alt="Logo Stéphanie Pro" class="sidebar-logo">
                     <div>
                         <div class="sidebar-brand-title">Stéphanie Bouteloup</div>
-                        <span class="sidebar-brand-badge">Ton agenda</span>
+                        <span class="sidebar-brand-badge">Accueil</span>
                     </div>
                 </div>
 
@@ -65,6 +67,30 @@
             </div>
 
             <div class="sidebar-footer">
+                <!-- Account Trigger Button (Logged Out) -->
+                <div class="sidebar-account-pill" id="sidebarAccountTrigger" onclick="app.openAuthModal()" title="Connexion à votre compte Pro">
+                    <div class="account-avatar-placeholder">
+                        <i class="fa-regular fa-user"></i>
+                    </div>
+                    <div class="account-meta">
+                        <span class="account-name">Espace Pro</span>
+                        <span class="account-status">Se connecter</span>
+                    </div>
+                    <i class="fa-solid fa-arrow-right-to-bracket account-icon-login"></i>
+                </div>
+
+                <!-- User Account Pill (Visible when logged in) -->
+                <div class="sidebar-user-card" id="sidebarUserCard" style="display: none;">
+                    <div class="user-avatar-initials" id="userAvatarInitials">SB</div>
+                    <div class="user-info-text">
+                        <span class="user-name" id="userAccountName">Stéphanie</span>
+                        <span class="user-email" id="userAccountEmail">stephanie@...</span>
+                    </div>
+                    <button class="btn-logout" id="btnLogout" title="Se déconnecter" type="button">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </button>
+                </div>
+
                 <div class="cabinet-live-card" id="cabinetLiveCard">
                     <div class="live-status-pill open" id="liveStatusBadge">
                         <span class="live-status-dot"></span>
@@ -384,6 +410,10 @@
                 <i class="fa-solid fa-sliders"></i>
                 <span>Réglages</span>
             </a>
+            <a href="#" class="mobile-nav-link" id="mobileAccountLink" onclick="app.openAuthModal(); return false;">
+                <i class="fa-regular fa-circle-user"></i>
+                <span id="mobileAccountText">Compte</span>
+            </a>
         </nav>
 
     </div> <!-- Fin app-container -->
@@ -646,6 +676,71 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ========================================================================= 
+         AUTHENTICATION OVERLAY (ESPACE PRIVÉ SÉCURISÉ)
+         ========================================================================= -->
+    <div class="auth-overlay hidden" id="authOverlay" style="display: none;">
+        <div class="auth-card">
+            <button type="button" class="auth-close-btn" onclick="app.closeAuthModal()" title="Fermer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="auth-card-header">
+                <div class="auth-logo-badge">
+                    <img src="assets/icon-pro-512.png" alt="Stéphanie Pro" class="auth-logo-img">
+                </div>
+                <h2 class="auth-title">Stéphanie Pro</h2>
+                <p class="auth-subtitle">Espace Privé Cabinet & Planning</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" id="tabRegisterBtn" type="button">Créer un compte</button>
+                <button class="auth-tab-btn" id="tabLoginBtn" type="button">Connexion</button>
+            </div>
+
+            <div class="auth-alert" id="authAlert" style="display: none;"></div>
+
+            <form id="authForm" class="auth-form">
+                <div class="form-group">
+                    <label for="authEmail">Adresse e-mail</label>
+                    <div class="input-with-icon">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="authEmail" class="form-control" placeholder="johndoe@gmail.com" required autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="form-group" id="authPasswordGroup">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label for="authPassword" style="margin-bottom: 0;">Mot de passe</label>
+                        <button type="button" class="btn-text-link" id="btnMagicLinkOption">Connexion sans mot de passe ?</button>
+                    </div>
+                    <div class="input-with-icon password-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="authPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="btn-toggle-password" id="btnTogglePassword" tabindex="-1">
+                            <i class="fa-regular fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-auth-submit" id="btnAuthSubmit">
+                    <span id="btnAuthText">Créer mon compte cabinet</span>
+                    <i class="fa-solid fa-arrow-right" id="btnAuthIcon"></i>
+                </button>
+
+                <button type="button" class="btn btn-outline btn-block btn-magic-submit" id="btnMagicSubmit" style="display: none; margin-top: 10px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Envoyer un lien magique par mail</span>
+                </button>
+            </form>
+
+            <div class="auth-card-footer">
+                <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i>
+                <span>Accès réservé • Sécurisé par Supabase Cloud</span>
+            </div>
         </div>
     </div>
 

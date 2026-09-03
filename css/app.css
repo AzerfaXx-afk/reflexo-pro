@@ -2030,4 +2030,430 @@ input, select, textarea {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
+/* ========================================================================= 
+   ÉCRAN D'AUTHENTIFICATION SÉCURISÉ (AWWWARDS LUXURY GLASS)
+   ========================================================================= */
+
+.auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at 50% 25%, rgba(95, 158, 160, 0.22), transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(197, 168, 128, 0.12), transparent 50%),
+                #0E1E22;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.02);
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 28px;
+    box-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+    width: 100%;
+    max-width: 440px;
+    padding: 36px 32px;
+    text-align: center;
+    position: relative;
+    animation: authCardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes authCardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.auth-card-header {
+    margin-bottom: 24px;
+}
+
+.auth-logo-badge {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px auto;
+    position: relative;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(95, 158, 160, 0.12) 0%, transparent 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(95, 158, 160, 0.18);
+}
+
+.auth-logo-img {
+    width: 74px;
+    height: 74px;
+    object-fit: contain;
+}
+
+.auth-title {
+    font-family: var(--font-heading);
+    font-size: 1.85rem;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--primary-dark);
+    margin: 0 0 4px 0;
+    letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 500;
+}
+
+.auth-tabs {
+    display: flex;
+    background: #F0F4F4;
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 24px;
+}
+
+.auth-tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-tab-btn.active {
+    background: #ffffff;
+    color: var(--primary-dark);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+
+.auth-alert {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 0.84rem;
+    margin-bottom: 18px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeIn 0.25s ease;
+}
+
+.auth-alert.error {
+    background: #FFEBEE;
+    color: #C62828;
+    border: 1px solid #FFCDD2;
+}
+
+.auth-alert.success {
+    background: #E8F5E9;
+    color: #2E7D32;
+    border: 1px solid #C8E6C9;
+}
+
+.auth-form {
+    text-align: left;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon .input-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.input-with-icon input {
+    padding-left: 42px !important;
+}
+
+.input-with-icon input:focus ~ .input-icon,
+.input-with-icon input:focus + .input-icon {
+    color: var(--primary);
+}
+
+.password-wrapper input {
+    padding-right: 44px !important;
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.btn-toggle-password:hover {
+    color: var(--primary-dark);
+}
+
+.btn-text-link {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.btn-text-link:hover {
+    color: var(--primary-dark);
+}
+
+.btn-auth-submit {
+    margin-top: 14px;
+    padding: 14px 20px;
+    font-size: 0.98rem;
+    font-weight: 600;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(95, 158, 160, 0.35);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(95, 158, 160, 0.45);
+}
+
+.btn-magic-submit {
+    padding: 12px 18px;
+    font-size: 0.88rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.auth-card-footer {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* ========================================================================= 
+   USER CARD DANS LA SIDEBAR
+   ========================================================================= */
+
+.sidebar-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(95, 158, 160, 0.15);
+    border-radius: 14px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.user-avatar-initials {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(95, 158, 160, 0.3);
+}
+
+.user-info-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+}
+
+.user-info-text .user-name {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-info-text .user-email {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-logout {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+    background: #FFEBEE;
+    color: #C62828;
+}
+
+/* ========================================================================= 
+   BOUTON COMPTE / CONNEXION (EN BAS À GAUCHE DE LA SIDEBAR)
+   ========================================================================= */
+
+.sidebar-account-pill {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #FFFFFF;
+    border: 1.5px solid rgba(95, 158, 160, 0.25);
+    border-radius: 16px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(31, 56, 62, 0.05);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-account-pill:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: 0 8px 20px rgba(95, 158, 160, 0.18);
+    background: #FAFDFD;
+}
+
+.account-avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.account-meta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.account-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1.2;
+}
+
+.account-status {
+    font-size: 0.74rem;
+    color: var(--primary);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.account-icon-login {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-account-pill:hover .account-icon-login {
+    transform: translateX(3px);
+    color: var(--primary);
+}
+
+/* Auth Modal Close Button */
+.auth-close-btn {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #F0F4F4;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.auth-close-btn:hover {
+    background: #E0E7E7;
+    color: var(--primary-dark);
+    transform: rotate(90deg);
+}
+
+
+
 
