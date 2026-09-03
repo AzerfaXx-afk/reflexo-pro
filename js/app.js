@@ -1796,19 +1796,36 @@ class StephanieProApp {
         this.data.schedule = defaultSchedule;
 
         list.innerHTML = defaultSchedule.map((s, idx) => `
-            <div class="schedule-day-item">
-                <div class="schedule-day-info">
-                    <label class="switch-toggle">
-                        <input type="checkbox" ${s.open ? 'checked' : ''} onchange="app.toggleDaySchedule(${idx}, this.checked)">
-                        <span class="switch-slider"></span>
-                    </label>
-                    <span class="day-label">${s.day}</span>
+            <div class="schedule-day-item ${s.open ? 'is-open' : 'is-closed'}">
+                <div class="schedule-day-header">
+                    <div class="schedule-day-info">
+                        <label class="switch-toggle">
+                            <input type="checkbox" ${s.open ? 'checked' : ''} onchange="app.toggleDaySchedule(${idx}, this.checked)">
+                            <span class="switch-slider"></span>
+                        </label>
+                        <span class="day-label">${s.day}</span>
+                    </div>
+                    <span class="day-badge ${s.open ? 'badge-open' : 'badge-closed'}">
+                        ${s.open ? 'Ouvert' : 'Fermé'}
+                    </span>
                 </div>
-                <div class="schedule-time-inputs" style="${s.open ? '' : 'opacity: 0.35; pointer-events: none;'}">
-                    <input type="time" value="${s.start}" onchange="app.updateDayTime(${idx}, 'start', this.value)">
-                    <span style="color: var(--text-muted); font-size: 0.8rem;">à</span>
-                    <input type="time" value="${s.end}" onchange="app.updateDayTime(${idx}, 'end', this.value)">
+                ${s.open ? `
+                <div class="schedule-time-row">
+                    <div class="time-field-box">
+                        <span class="time-field-label">Début</span>
+                        <input type="time" value="${s.start}" onchange="app.updateDayTime(${idx}, 'start', this.value)">
+                    </div>
+                    <span class="time-arrow">à</span>
+                    <div class="time-field-box">
+                        <span class="time-field-label">Fin</span>
+                        <input type="time" value="${s.end}" onchange="app.updateDayTime(${idx}, 'end', this.value)">
+                    </div>
                 </div>
+                ` : `
+                <div class="schedule-closed-msg">
+                    <span>Journée de repos (créneaux bloqués)</span>
+                </div>
+                `}
             </div>
         `).join('');
 
