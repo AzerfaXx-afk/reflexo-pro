@@ -215,9 +215,62 @@ class StephanieProApp {
         // Rafraîchir le statut en direct toutes les 30 secondes
         setInterval(() => this.updateCabinetLiveStatus(), 30000);
 
+        // Synchronisation Cloud Supabase
+        this.syncWithSupabase();
+
         // Enregistrer Service Worker pour PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail', err));
+        }
+    }
+
+    async syncWithSupabase() {
+        if (!window.supabaseService) return;
+        try {
+            const connected = await window.supabaseService.testConnection();
+            if (connected) {
+                console.log('⚡ Supabase Cloud connecté !');
+                const cloudState = await window.supabaseService.loadFullState();
+                if (cloudState) {
+                    if (cloudState.clients && cloudState.clients.length > 0) {
+                        this.data.clients = cloudState.clients;
+                    } else if (this.data.clients && this.data.clients.length > 0) {
+                        this.data.clients.forEach(c => window.supabaseService.upsertClient(c));
+                    }
+
+                    if (cloudState.services && cloudState.services.length > 0) {
+                        this.data.services = cloudState.services;
+                    } else if (this.data.services && this.data.services.length > 0) {
+                        this.data.services.forEach(s => window.supabaseService.upsertService(s));
+                    }
+
+                    if (cloudState.appointments && cloudState.appointments.length > 0) {
+                        this.data.appointments = cloudState.appointments;
+                    } else if (this.data.appointments && this.data.appointments.length > 0) {
+                        this.data.appointments.forEach(a => window.supabaseService.upsertAppointment(a));
+                    }
+
+                    if (cloudState.blockedSlots && cloudState.blockedSlots.length > 0) {
+                        this.data.blockedSlots = cloudState.blockedSlots;
+                    } else if (this.data.blockedSlots && this.data.blockedSlots.length > 0) {
+                        this.data.blockedSlots.forEach(b => window.supabaseService.upsertBlockedSlot(b));
+                    }
+
+                    if (cloudState.schedule) {
+                        this.data.schedule = cloudState.schedule;
+                    }
+                    if (cloudState.bufferTime !== undefined) {
+                        this.data.bufferTime = cloudState.bufferTime;
+                    }
+
+                    this.saveData();
+                    this.renderAll();
+                    this.populateServiceDropdown();
+                    if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
+                }
+            }
+        } catch (e) {
+            console.warn('Supabase sync background check:', e);
         }
     }
 
@@ -963,6 +1016,128 @@ class StephanieProApp {
         }
     }
 
+    selectCustomService(serviceId) {
+        const s = this.data.services.find(srv => srv.id === serviceId);
+        if (!s) return;
+
+        const hiddenInput = document.getElementById('appointmentServiceSelect');
+        const triggerContent = document.getElementById('triggerSelectedService');
+        const wrapper = document.getElementById('customServiceSelectWrapper');
+
+        if (hiddenInput) hiddenInput.value = s.id;
+        if (triggerContent) {
+            triggerContent.innerHTML = `
+                <div class="trigger-selected-item">
+                    <span class="trigger-dot" style="background-color: ${s.colorBorder || '#5F9EA0'};"></span>
+                    <span>${s.name}</span>
+                    <span class="option-badge" style="margin-left: auto;">${s.duration}m • ${s.price}€</span>
+                </div>
+            `;
+        }
+        if (wrapper) wrapper.classList.remove('open');
+        this.renderCustomServiceDropdown();
+    }
+
+    openNewAppointmentModal(date, time) {
+        const modal = document.getElementById('modalNewAppointment');
+        if (!modal) return;
+
+        document.getElementById('apptDate').value = date || new Date().toISOString().split('T')[0];
+        document.getElementById('apptTime').value = time || '10:00';
+        document.getElementById('apptClientName').value = '';
+        document.getElementById('apptClientPhone').value = '';
+        document.getElementById('apptClientEmail').value = '';
+        document.getElementById('apptNotes').value = '';
+
+        if (this.data.services.length > 0) {
+            this.selectCustomService(this.data.services[0].id);
+        } else {
+            this.renderCustomServiceDropdown();
+        }
+
+        modal.classList.add('open');
+    }
+
+    openNewAppointmentForClient(clientName, clientPhone) {
+        this.openNewAppointmentModal();
+        document.getElementById('apptClientName').value = clientName || '';
+        document.getElementById('apptClientPhone').value = clientPhone || '';
+    }
+
+    saveNewAppointment() {
+        const clientName = document.getElementById('apptClientName').value.trim();
+        const clientPhone = document.getElementById('apptClientPhone').value.trim();
+        const clientEmail = document.getElementById('apptClientEmail').value.trim();
+        const serviceId = document.getElementById('appointmentServiceSelect').value;
+
+        const date = document.getElementById('apptDate').value;
+        const time = document.getElementById('apptTime').value;
+        const notes = document.getElementById('apptNotes').value.trim();
+
+        if (!clientName) {
+            alert('Veuillez renseigner le nom de la cliente.');
+            return;
+        }
+
+        if (!serviceId) {
+            alert('Veuillez sélectionner une prestation.');
+            return;
+        }
+
+        const service = this.data.services.find(s => s.id === serviceId);
+        const serviceName = service ? service.name : 'Prestation';
+        const duration = service ? service.duration : 60;
+        const price = service ? service.price : 80;
+        const colorBg = service ? service.colorBg : '#E8EAF6';
+        const colorBorder = service ? service.colorBorder : '#5F9EA0';
+        const colorText = service ? service.colorText : '#1F383E';
+
+        const newAppt = {
+            id: 'appt_' + Date.now(),
+            clientName,
+            clientPhone,
+            clientEmail,
+            serviceId,
+            serviceName,
+            duration,
+            price,
+            date,
+            time,
+            notes,
+            colorBg,
+            colorBorder,
+            colorText,
+            createdAt: new Date().toISOString()
+        };
+
+        this.data.appointments.push(newAppt);
+
+        // Sauvegarder dans le répertoire client si pas déjà existant
+        let existingClient = this.data.clients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
+        if (!existingClient) {
+            existingClient = {
+                id: 'cli_' + Date.now(),
+                name: clientName,
+                phone: clientPhone,
+                email: clientEmail
+            };
+            this.data.clients.push(existingClient);
+        } else if (clientPhone && !existingClient.phone) {
+            existingClient.phone = clientPhone;
+        }
+
+        this.addNotification(`Nouveau RDV pris : ${clientName} - ${serviceName} (${date} à ${time})`);
+        this.saveData();
+
+        // Synchronisation Cloud Supabase
+        window.supabaseService?.upsertAppointment(newAppt);
+        window.supabaseService?.upsertClient(existingClient);
+
+        document.getElementById('modalNewAppointment').classList.remove('open');
+        this.renderAll();
+        this.showToast(`Rendez-vous enregistré avec succès pour ${clientName} !`, 'success');
+    }
+
     openAppointmentDetails(id) {
         const appt = this.data.appointments.find(a => a.id === id);
         if (!appt) return;
@@ -1004,6 +1179,7 @@ class StephanieProApp {
                 if (confirm(`Voulez-vous annuler le rendez-vous de ${appt.clientName} ?`)) {
                     this.data.appointments = this.data.appointments.filter(a => a.id !== id);
                     this.saveData();
+                    window.supabaseService?.deleteAppointment(id);
                     modal.classList.remove('open');
                     this.renderAll();
                     this.showToast('Rendez-vous annulé.', 'danger');
@@ -1100,6 +1276,7 @@ class StephanieProApp {
         if (confirm('Voulez-vous supprimer cette prestation du catalogue ?')) {
             this.data.services = this.data.services.filter(s => s.id !== id);
             this.saveData();
+            window.supabaseService?.deleteService(id);
             this.renderCatalogue();
             this.populateServiceDropdown();
             this.showToast('Prestation supprimée', 'danger');
@@ -1134,6 +1311,7 @@ class StephanieProApp {
     }
 
     finalizeSaveService({ name, category, duration, price, description }) {
+        let savedService = null;
         if (this.editingServiceId) {
             const s = this.data.services.find(srv => srv.id === this.editingServiceId);
             if (s) {
@@ -1146,6 +1324,7 @@ class StephanieProApp {
                 s.colorBg = this.selectedColor.bg;
                 s.colorBorder = this.selectedColor.border;
                 s.colorText = this.selectedColor.text;
+                savedService = s;
             }
             this.showToast('Prestation modifiée avec succès !', 'success');
         } else {
@@ -1162,10 +1341,13 @@ class StephanieProApp {
                 colorText: this.selectedColor.text
             };
             this.data.services.push(newService);
+            savedService = newService;
             this.showToast('Nouvelle prestation ajoutée au catalogue !', 'success');
         }
 
         this.saveData();
+        if (savedService) window.supabaseService?.upsertService(savedService);
+
         document.getElementById('modalNewService').classList.remove('open');
         this.renderCatalogue();
         this.populateServiceDropdown();
@@ -1244,6 +1426,7 @@ class StephanieProApp {
         const duration = Number(document.getElementById('blockDuration').value) || 60;
         const reason = document.getElementById('blockReason').value.trim() || 'Indisponible';
 
+        let savedBlock = null;
         if (this.editingBlockedSlotId) {
             const blk = this.data.blockedSlots.find(b => b.id === this.editingBlockedSlotId);
             if (blk) {
@@ -1251,20 +1434,25 @@ class StephanieProApp {
                 blk.time = time;
                 blk.duration = duration;
                 blk.reason = reason;
+                savedBlock = blk;
                 this.showToast('Indisponibilité mise à jour !', 'success');
             }
         } else {
-            this.data.blockedSlots.push({
+            const newBlock = {
                 id: 'block_' + Date.now(),
                 date,
                 time,
                 duration,
                 reason
-            });
+            };
+            this.data.blockedSlots.push(newBlock);
+            savedBlock = newBlock;
             this.showToast('Créneau indisponible bloqué sur votre planning.', 'success');
         }
 
         this.saveData();
+        if (savedBlock) window.supabaseService?.upsertBlockedSlot(savedBlock);
+
         document.getElementById('modalBlockSlot').classList.remove('open');
         if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
     }
@@ -1272,6 +1460,7 @@ class StephanieProApp {
     deleteBlockedSlot(id) {
         this.data.blockedSlots = this.data.blockedSlots.filter(b => b.id !== id);
         this.saveData();
+        window.supabaseService?.deleteBlockedSlot(id);
         document.getElementById('modalBlockSlot').classList.remove('open');
         if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
         this.showToast('Indisponibilité supprimée.', 'danger');
@@ -1308,6 +1497,16 @@ class StephanieProApp {
                 </div>
             </div>
         `).join('');
+
+        // Synchroniser les pills de temps de battement
+        const currentBuffer = this.data.bufferTime !== undefined ? this.data.bufferTime : 15;
+        document.querySelectorAll('#bufferPillsGroup .pill-option').forEach(p => {
+            if (Number(p.getAttribute('data-value')) === Number(currentBuffer)) {
+                p.classList.add('active');
+            } else {
+                p.classList.remove('active');
+            }
+        });
     }
 
     toggleDaySchedule(idx, isOpen) {
@@ -1323,25 +1522,30 @@ class StephanieProApp {
         if (this.data.schedule && this.data.schedule[idx]) {
             this.data.schedule[idx][field] = val;
             this.saveData();
+            window.supabaseService?.saveSettings({
+                address: document.getElementById('settingCabinetAddress')?.value,
+                phone: document.getElementById('settingCabinetPhone')?.value,
+                email: document.getElementById('settingCabinetEmail')?.value,
+                bufferTime: this.data.bufferTime,
+                schedule: this.data.schedule
+            });
         }
     }
 
-    exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.data, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `sauvegarde-stephanie-pro-${new Date().toISOString().split('T')[0]}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-        this.showToast('Sauvegarde exportée avec succès !', 'success');
-    }
-
-    resetAllData() {
-        if (confirm('Êtes-vous sûre de vouloir réinitialiser toutes vos données locales ?')) {
-            localStorage.removeItem(this.storageKey);
-            location.reload();
-        }
+    saveCabinetSettings() {
+        const address = document.getElementById('settingCabinetAddress')?.value.trim();
+        const phone = document.getElementById('settingCabinetPhone')?.value.trim();
+        const email = document.getElementById('settingCabinetEmail')?.value.trim();
+        this.data.cabinetInfo = { address, phone, email };
+        this.saveData();
+        window.supabaseService?.saveSettings({
+            address,
+            phone,
+            email,
+            bufferTime: this.data.bufferTime,
+            schedule: this.data.schedule
+        });
+        this.showToast('Informations du cabinet enregistrées et synchronisées', 'success');
     }
 
     showToast(message, type = 'success') {
@@ -1376,6 +1580,15 @@ class StephanieProApp {
 
 // Instance globale accessible
 let app;
-document.addEventListener('DOMContentLoaded', () => {
-    app = new StephanieProApp();
-});
+function initStephanieApp() {
+    if (!window.app) {
+        app = new StephanieProApp();
+        window.app = app;
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStephanieApp);
+} else {
+    initStephanieApp();
+}

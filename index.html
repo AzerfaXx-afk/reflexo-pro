@@ -318,32 +318,19 @@
                         <!-- Bloc 2: Temps de battement entre les séances -->
                         <div class="card-box" style="margin-bottom: 20px;">
                             <h3 style="margin-bottom: 10px;"><i class="fa-solid fa-hourglass-half"></i> Temps de battement entre deux soins</h3>
-                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
                                 Pause automatique ajoutée après chaque rendez-vous pour aérer, désinfecter et préparer la table.
                             </p>
                             <div class="pills-group" id="bufferPillsGroup">
-                                <span class="pill-option" data-value="0">0 minute (enchaînement)</span>
-                                <span class="pill-option active" data-value="15">15 minutes (Recommandé)</span>
-                                <span class="pill-option" data-value="30">30 minutes</span>
+                                <span class="pill-option" data-value="0">0 min</span>
+                                <span class="pill-option active" data-value="15">15 min</span>
+                                <span class="pill-option" data-value="30">30 min</span>
+                                <span class="pill-option" data-value="45">45 min</span>
+                                <span class="pill-option" data-value="60">1h</span>
                             </div>
                         </div>
 
-                        <!-- Bloc 3: Synchronisation iPhone / Google Calendar -->
-                        <div class="card-box" style="margin-bottom: 20px;">
-                            <h3 style="margin-bottom: 10px;"><i class="fa-solid fa-mobile-screen-button"></i> Synchronisation Calendrier Smartphone</h3>
-                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;">
-                                Copiez ce lien et ajoutez-le comme <em>Calendrier avec abonnement</em> dans votre iPhone pour voir vos rendez-vous directement dans votre application Calendrier.
-                            </p>
-                            <div class="sync-ical-box">
-                                <i class="fa-solid fa-link" style="color: var(--primary);"></i>
-                                <span class="sync-ical-url">https://reflexo-pro.vercel.app/api/calendar.ics</span>
-                                <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('https://reflexo-pro.vercel.app/api/calendar.ics'); app.showToast('Lien de synchronisation copié !', 'success');">
-                                    <i class="fa-regular fa-copy"></i> Copier
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Bloc 4: Coordonnées du cabinet -->
+                        <!-- Bloc 3: Coordonnées du cabinet -->
                         <div class="card-box" style="margin-bottom: 20px;">
                             <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-location-dot"></i> Informations du Cabinet</h3>
                             <div class="form-group">
@@ -360,25 +347,9 @@
                                     <input type="email" class="form-control" value="phanybox@gmail.com" id="settingCabinetEmail">
                                 </div>
                             </div>
-                            <button class="btn btn-outline btn-sm" onclick="app.showToast('Informations du cabinet enregistrées', 'success')">
+                            <button class="btn btn-outline btn-sm" onclick="app.saveCabinetSettings()">
                                 <i class="fa-solid fa-check"></i> Enregistrer
                             </button>
-                        </div>
-
-                        <!-- Bloc 5: Sauvegarde et sécurité -->
-                        <div class="card-box" style="margin-bottom: 20px;">
-                            <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-shield-halved"></i> Sauvegarde & Données</h3>
-                            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-                                Vos données sont hébergées de façon privée. Vous pouvez télécharger une copie de sauvegarde à tout moment.
-                            </p>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button class="btn btn-outline btn-sm" onclick="app.exportData()">
-                                    <i class="fa-solid fa-download"></i> Exporter mes données
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="app.resetAllData()">
-                                    <i class="fa-solid fa-trash-can"></i> Remettre à zéro
-                                </button>
-                            </div>
                         </div>
 
                     </div>
@@ -682,7 +653,9 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- Scripts -->
-    <script src="js/calendar.js?v=1"></script>
-    <script src="js/app.js?v=1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/calendar.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
 </body>
 </html>
