@@ -282,6 +282,17 @@ class StephanieProApp {
         let authMode = 'register';
         let magicLinkMode = false;
 
+        // Bouton admin test : strictement réservé au local (localhost / 127.0.0.1)
+        const btnAdminQuick = document.getElementById('btnAdminQuickLogin');
+        if (btnAdminQuick) {
+            const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            if (isLocal) {
+                btnAdminQuick.style.display = 'flex';
+            } else {
+                btnAdminQuick.remove(); // Supprime complètement l'élément du DOM en production
+            }
+        }
+
         // Toggle Password visibility
         btnTogglePass?.addEventListener('click', () => {
             const isPassword = passInput.type === 'password';
@@ -528,6 +539,9 @@ class StephanieProApp {
     }
 
     async quickAdminLogin() {
+        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (!isLocal) return; // Sécurité stricte en production
+
         const email = 'adambox06@gmail.com';
         const password = 'admin123';
         const emailInput = document.getElementById('authEmail');
