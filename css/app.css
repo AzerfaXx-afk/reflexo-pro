@@ -384,21 +384,41 @@ input, select, textarea {
     color: #fff;
 }
 
-/* CONTENT SCROLLABLE BODY */
+/* CONTENT SCROLLABLE BODY (AWWWARDS FLUID SCROLL) */
 .content-body {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 32px 36px;
+    padding: 36px 40px 140px 40px;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
     touch-action: pan-y;
+    scroll-behavior: smooth;
+}
+
+.content-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.content-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.content-body::-webkit-scrollbar-thumb {
+    background: rgba(95, 158, 160, 0.22);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.content-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(95, 158, 160, 0.45);
 }
 
 /* VUES (TAB CONTENTS) */
 .view-panel {
     display: none;
-    animation: fadeIn 0.3s ease forwards;
+    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    padding-bottom: 40px;
 }
 
 .view-panel.active {
@@ -1403,11 +1423,12 @@ input, select, textarea {
         display: none !important;
     }
     
-    /* ───── CONTENT BODY WITH SAFE AREA ───── */
+    /* ───── CONTENT BODY WITH SAFE AREA & GENEROUS BOTTOM SCROLL ───── */
     .content-body {
-        padding: max(16px, env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom)) 14px;
+        padding: max(16px, env(safe-area-inset-top)) 16px calc(130px + env(safe-area-inset-bottom)) 16px !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
+        scroll-behavior: smooth;
     }
 
     /* ───── DASHBOARD HERO COMPACT ───── */
