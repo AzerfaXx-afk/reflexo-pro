@@ -197,10 +197,13 @@ class StephanieProApp {
             }
         }
 
-        // Si aucun RDV n'est chargé et qu'on n'a pas explicitement vidé le test : charger automatiquement les 490 RDV Cfixé !
+        // Si aucun RDV ou soin n'est chargé et qu'on n'a pas explicitement vidé le test : charger automatiquement les données Cfixé !
         if (data.appointments.length === 0 && !localStorage.getItem('cfixe_cleared') && window.CFIXE_IMPORT_DATA) {
             data.appointments = [...(window.CFIXE_IMPORT_DATA.appointments || [])];
             data.clients = [...(window.CFIXE_IMPORT_DATA.clients || [])];
+            if (data.services.length === 0 && window.CFIXE_IMPORT_DATA.services) {
+                data.services = [...window.CFIXE_IMPORT_DATA.services];
+            }
         }
         
         return data;
@@ -1037,6 +1040,47 @@ class StephanieProApp {
             this.renderClients(e.target.value);
         });
 
+        // Bascule Mode Consultation / Édition dans la Fiche RDV
+        const toggleEditBtn = document.getElementById('btnToggleEditAppt');
+        toggleEditBtn?.addEventListener('click', () => {
+            const viewMode = document.getElementById('apptViewMode');
+            const editMode = document.getElementById('apptEditMode');
+            if (editMode.style.display === 'none') {
+                viewMode.style.display = 'none';
+                editMode.style.display = 'block';
+                toggleEditBtn.innerHTML = '<i class="fa-solid fa-eye"></i> Voir détails';
+            } else {
+                viewMode.style.display = 'block';
+                editMode.style.display = 'none';
+                toggleEditBtn.innerHTML = '<i class="fa-regular fa-pen-to-square"></i> Modifier';
+            }
+        });
+
+        document.getElementById('btnCancelEditAppt')?.addEventListener('click', () => {
+            document.getElementById('apptViewMode').style.display = 'block';
+            document.getElementById('apptEditMode').style.display = 'none';
+            const toggle = document.getElementById('btnToggleEditAppt');
+            if (toggle) toggle.innerHTML = '<i class="fa-regular fa-pen-to-square"></i> Modifier';
+        });
+
+        // Soumission Modification RDV
+        document.getElementById('apptEditMode')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveEditedAppointment();
+        });
+
+        // Auto-calcul de l'heure de fin ou de la durée
+        const startTimeInput = document.getElementById('editApptStartTime');
+        const endTimeInput = document.getElementById('editApptEndTime');
+        startTimeInput?.addEventListener('change', () => {
+            if (startTimeInput.value && !endTimeInput.value) {
+                const [sh, sm] = startTimeInput.value.split(':').map(Number);
+                const eh = String(Math.floor((sh * 60 + sm + 60) / 60) % 24).padStart(2, '0');
+                const em = String((sh * 60 + sm + 60) % 60).padStart(2, '0');
+                endTimeInput.value = `${eh}:${em}`;
+            }
+        });
+
         // Catégorie dynamique : Toggle formulaire d'ajout
         document.getElementById('btnToggleNewCategory')?.addEventListener('click', () => {
             const box = document.getElementById('newCategoryBox');
@@ -1432,10 +1476,27 @@ class StephanieProApp {
         const modal = document.getElementById('modalAppointmentDetails');
         if (!modal) return;
 
-        document.getElementById('detailClientName').textContent = appt.clientName;
-        document.getElementById('detailServiceName').textContent = appt.serviceName;
-        document.getElementById('detailDateTime').textContent = `${appt.date} à ${appt.time} (${appt.duration} min)`;
-        document.getElementById('detailPrice').textContent = `${appt.price} €`;
+        // Reset view/edit states
+        const viewMode = document.getElementById('apptViewMode');
+        const editMode = document.getElementById('apptEditMode');
+        const toggleBtn = document.getElementById('btnToggleEditAppt');
+        if (viewMode) viewMode.style.display = 'block';
+        if (editMode) editMode.style.display = 'none';
+        if (toggleBtn) toggleBtn.innerHTML = '<i class="fa-regular fa-pen-to-square"></i> Modifier';
+
+        // Calcul précis de l'heure de fin
+        const [sh, sm] = (appt.time || '10:00').split(':').map(Number);
+        const durMin = Number(appt.duration) || 60;
+        const totalEndMin = sh * 60 + sm + durMin;
+        const endH = String(Math.floor(totalEndMin / 60) % 24).padStart(2, '0');
+        const endM = String(totalEndMin % 60).padStart(2, '0');
+        const endTimeStr = `${endH}:${endM}`;
+
+        document.getElementById('detailClientName').textContent = appt.clientName || 'Client';
+        document.getElementById('detailServiceName').textContent = appt.serviceName || 'Prestation';
+        document.getElementById('detailDate').textContent = appt.date;
+        document.getElementById('detailHours').textContent = `${appt.time} – ${endTimeStr} (${durMin} min)`;
+        document.getElementById('detailPrice').textContent = `${appt.price || 80} €`;
 
         // Affichage du mode de règlement clair pour Stéphanie
         const paymentBadge = document.getElementById('detailPaymentBadge');
@@ -1450,6 +1511,17 @@ class StephanieProApp {
         document.getElementById('detailPhone').textContent = appt.clientPhone || 'Non renseigné';
         document.getElementById('detailEmail').textContent = appt.clientEmail || 'Non renseigné';
         document.getElementById('detailNotes').textContent = appt.notes || 'Aucune note particulière';
+
+        // Pré-remplissage formulaire de modification
+        document.getElementById('editApptId').value = appt.id;
+        document.getElementById('editApptClientName').value = appt.clientName || '';
+        document.getElementById('editApptDate').value = appt.date || '';
+        document.getElementById('editApptStartTime').value = appt.time || '10:00';
+        document.getElementById('editApptEndTime').value = endTimeStr;
+        document.getElementById('editApptPrice').value = appt.price || 80;
+        document.getElementById('editApptService').value = appt.serviceName || '';
+        document.getElementById('editApptPhone').value = appt.clientPhone || '';
+        document.getElementById('editApptNotes').value = appt.notes || '';
 
         const callBtn = document.getElementById('detailCallBtn');
         if (callBtn) {
@@ -1474,14 +1546,14 @@ class StephanieProApp {
         const deleteBtn = document.getElementById('detailDeleteBtn');
         if (deleteBtn) {
             deleteBtn.onclick = () => {
-                if (confirm(`Voulez-vous annuler le rendez-vous de ${appt.clientName} ?`)) {
+                if (confirm(`Voulez-vous supprimer le rendez-vous de ${appt.clientName} ?`)) {
                     this.data.appointments = this.data.appointments.filter(a => a.id !== id);
                     this.saveData();
                     if (this.currentUser) {
                         window.supabaseService?.deleteAppointment(id);
-                        this.showToast('Rendez-vous annulé et supprimé du Cloud.', 'danger');
+                        this.showToast('Rendez-vous supprimé du Cloud.', 'danger');
                     } else {
-                        this.showToast('Mode Test : rendez-vous annulé localement.', 'info');
+                        this.showToast('Mode Test : rendez-vous supprimé localement.', 'info');
                     }
                     modal.classList.remove('open');
                     this.renderAll();
@@ -1490,6 +1562,64 @@ class StephanieProApp {
         }
 
         modal.classList.add('open');
+    }
+
+    saveEditedAppointment() {
+        const id = document.getElementById('editApptId').value;
+        const appt = this.data.appointments.find(a => a.id === id);
+        if (!appt) return;
+
+        const newClient = document.getElementById('editApptClientName').value.trim();
+        const newDate = document.getElementById('editApptDate').value;
+        const newStartTime = document.getElementById('editApptStartTime').value;
+        const newEndTime = document.getElementById('editApptEndTime').value;
+        const newPrice = Number(document.getElementById('editApptPrice').value) || appt.price;
+        const newService = document.getElementById('editApptService').value.trim() || appt.serviceName;
+        const newPhone = document.getElementById('editApptPhone').value.trim();
+        const newNotes = document.getElementById('editApptNotes').value.trim();
+
+        if (!newClient) {
+            alert('Veuillez renseigner le nom du client.');
+            return;
+        }
+
+        // Calcul de la nouvelle durée en minutes
+        let newDuration = appt.duration;
+        if (newStartTime && newEndTime) {
+            const [sh, sm] = newStartTime.split(':').map(Number);
+            const [eh, em] = newEndTime.split(':').map(Number);
+            const diffMin = (eh * 60 + em) - (sh * 60 + sm);
+            if (diffMin > 0) {
+                newDuration = diffMin;
+            }
+        }
+
+        appt.clientName = newClient;
+        appt.date = newDate;
+        appt.time = newStartTime;
+        appt.duration = newDuration;
+        appt.price = newPrice;
+        appt.serviceName = newService;
+        appt.clientPhone = newPhone;
+        appt.notes = newNotes;
+
+        // Mise à jour client si nouveau téléphone
+        if (newClient) {
+            const existingClient = this.data.clients.find(c => c.name.toLowerCase() === newClient.toLowerCase());
+            if (existingClient && newPhone && !existingClient.phone) {
+                existingClient.phone = newPhone;
+            }
+        }
+
+        this.saveData();
+        if (this.currentUser) {
+            window.supabaseService?.saveAppointments(this.data.appointments);
+        }
+
+        const modal = document.getElementById('modalAppointmentDetails');
+        if (modal) modal.classList.remove('open');
+        this.renderAll();
+        this.showToast(`✨ Rendez-vous de ${appt.clientName} modifié (${newStartTime} – ${newEndTime})`, 'success');
     }
 
     openNewServiceModal() {
@@ -1897,14 +2027,18 @@ class StephanieProApp {
         localStorage.removeItem('cfixe_cleared');
         this.data.appointments = [...(window.CFIXE_IMPORT_DATA.appointments || [])];
         this.data.clients = [...(window.CFIXE_IMPORT_DATA.clients || [])];
+        if (window.CFIXE_IMPORT_DATA.services) {
+            this.data.services = [...window.CFIXE_IMPORT_DATA.services];
+        }
         this.saveData();
         if (this.currentUser) {
             window.supabaseService?.saveAppointments(this.data.appointments);
             window.supabaseService?.saveClients(this.data.clients);
+            window.supabaseService?.saveServices(this.data.services);
         }
         this.renderAll();
         if (showToast) {
-            this.showToast(`✨ ${this.data.appointments.length} rendez-vous et ${this.data.clients.length} clients Cfixé chargés !`, 'success');
+            this.showToast(`✨ ${this.data.appointments.length} RDV, ${this.data.clients.length} clients et 6 soins Cfixé chargés !`, 'success');
         }
     }
 

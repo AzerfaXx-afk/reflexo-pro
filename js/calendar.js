@@ -174,12 +174,19 @@ class ProCalendar {
                 const catBorder = evt.colorBorder || '#5F9EA0';
                 const catText = evt.colorText || '#1F383E';
 
+                // Calcul de l'heure de fin exacte
+                const durMin = Number(evt.duration) || 60;
+                const totalEndMin = eh * 60 + em + durMin;
+                const endH = String(Math.floor(totalEndMin / 60) % 24).padStart(2, '0');
+                const endM = String(totalEndMin % 60).padStart(2, '0');
+                const timeLabel = `${evt.time} – ${endH}:${endM}`;
+
                 bodyHtml += `
                     <div class="event-block" 
                          draggable="true" 
                          data-id="${evt.id}" 
                          style="top: ${topPos}px; height: ${heightPos}px; background-color: ${catBg}; border-left-color: ${catBorder}; color: ${catText};">
-                        <div class="event-time">${evt.time} (${evt.duration}m)</div>
+                        <div class="event-time">${timeLabel}</div>
                         <div class="event-client">${evt.clientName || 'Client'}</div>
                         <div class="event-service">${evt.serviceName || 'Prestation'}</div>
                     </div>
