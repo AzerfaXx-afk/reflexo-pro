@@ -228,6 +228,7 @@ class StephanieProApp {
         this.updateHeaderDate();
         this.updateCabinetLiveStatus();
         this.setupAuth();
+        this.initPullToRefresh();
 
         // Rafraîchir le statut en direct toutes les 30 secondes
         setInterval(() => this.updateCabinetLiveStatus(), 30000);
@@ -2712,6 +2713,154 @@ class StephanieProApp {
                 btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Réessayer l’import Cfixé';
             }
         }
+    }
+
+    initPullToRefresh() {
+        const ptr = document.getElementById('pullToRefresh');
+        const ptrIcon = document.getElementById('ptrIcon');
+        const ptrSpinner = document.getElementById('ptrSpinner');
+        const ptrLabel = document.getElementById('ptrLabel');
+        const scrollContainer = document.querySelector('.content-body');
+
+        if (!ptr || !scrollContainer) return;
+
+        let startY = 0;
+        let startX = 0;
+        let isPulling = false;
+        let isRefreshing = false;
+        const THRESHOLD = 58;
+
+        const isAtTop = () => {
+            return scrollContainer.scrollTop <= 2 && window.scrollY <= 2 && document.documentElement.scrollTop <= 2;
+        };
+
+        const resetPtr = () => {
+            ptr.classList.remove('visible', 'release', 'refreshing');
+            ptr.style.transform = 'translate(-50%, -90px)';
+            ptr.style.opacity = '0';
+        };
+
+        const onTouchStart = (e) => {
+            if (isRefreshing) return;
+            if (!isAtTop()) return;
+            
+            const touch = e.touches[0];
+            startY = touch.clientY;
+            startX = touch.clientX;
+            isPulling = true;
+        };
+
+        const onTouchMove = (e) => {
+            if (!isPulling || isRefreshing) return;
+            if (!isAtTop()) {
+                isPulling = false;
+                resetPtr();
+                return;
+            }
+
+            const touch = e.touches[0];
+            const deltaY = touch.clientY - startY;
+            const deltaX = Math.abs(touch.clientX - startX);
+
+            if (deltaX > deltaY || deltaY <= 0) {
+                if (deltaY < 0) {
+                    isPulling = false;
+                    resetPtr();
+                }
+                return;
+            }
+
+            const distance = Math.min(85, Math.pow(deltaY, 0.82));
+
+            if (distance > 6) {
+                ptr.classList.add('visible');
+                ptr.style.transform = `translate(-50%, ${distance - 75}px)`;
+                ptr.style.opacity = Math.min(1, distance / 35);
+
+                const progress = Math.min(1, (distance - 6) / (THRESHOLD - 6));
+                if (ptrIcon && !ptr.classList.contains('release')) {
+                    ptrIcon.style.transform = `rotate(${progress * 180}deg)`;
+                }
+
+                if (distance >= THRESHOLD) {
+                    if (!ptr.classList.contains('release')) {
+                        ptr.classList.add('release');
+                        if (ptrLabel) ptrLabel.textContent = 'Relâchez pour actualiser';
+                        if (navigator.vibrate) {
+                            try { navigator.vibrate(12); } catch (err) {}
+                        }
+                    }
+                } else {
+                    if (ptr.classList.contains('release')) {
+                        ptr.classList.remove('release');
+                        if (ptrLabel) ptrLabel.textContent = 'Glissez pour actualiser';
+                    }
+                }
+
+                if (e.cancelable && distance > 14) {
+                    e.preventDefault();
+                }
+            }
+        };
+
+        const onTouchEnd = async () => {
+            if (!isPulling || isRefreshing) return;
+            isPulling = false;
+
+            if (ptr.classList.contains('release')) {
+                isRefreshing = true;
+                ptr.classList.remove('release');
+                ptr.classList.add('refreshing');
+                ptr.style.transform = 'translate(-50%, 0px)';
+                ptr.style.opacity = '1';
+
+                if (ptrIcon) ptrIcon.style.display = 'none';
+                if (ptrSpinner) ptrSpinner.style.display = 'block';
+                if (ptrLabel) ptrLabel.textContent = 'Actualisation en direct...';
+
+                try {
+                    await this.syncWithSupabase();
+                    
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate([10, 30, 10]); } catch (err) {}
+                    }
+
+                    if (ptrSpinner) ptrSpinner.style.display = 'none';
+                    if (ptrIcon) {
+                        ptrIcon.style.display = 'inline-block';
+                        ptrIcon.className = 'fa-solid fa-check ptr-icon';
+                        ptrIcon.style.color = '#34D399';
+                        ptrIcon.style.transform = 'none';
+                    }
+                    if (ptrLabel) ptrLabel.textContent = 'Cabinet à jour !';
+
+                    setTimeout(() => {
+                        resetPtr();
+                        setTimeout(() => {
+                            isRefreshing = false;
+                            if (ptrIcon) {
+                                ptrIcon.className = 'fa-solid fa-arrow-down ptr-icon';
+                                ptrIcon.style.color = '';
+                            }
+                            if (ptrLabel) ptrLabel.textContent = 'Glissez pour actualiser';
+                        }, 300);
+                    }, 650);
+
+                } catch (err) {
+                    console.error('Erreur pull to refresh:', err);
+                    resetPtr();
+                    isRefreshing = false;
+                }
+
+            } else {
+                resetPtr();
+            }
+        };
+
+        scrollContainer.addEventListener('touchstart', onTouchStart, { passive: true });
+        scrollContainer.addEventListener('touchmove', onTouchMove, { passive: false });
+        scrollContainer.addEventListener('touchend', onTouchEnd, { passive: true });
+        scrollContainer.addEventListener('touchcancel', onTouchEnd, { passive: true });
     }
 
     renderAll() {
