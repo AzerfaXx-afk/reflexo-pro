@@ -67,42 +67,15 @@
             </div>
 
             <div class="sidebar-footer">
-                <div class="sidebar-footer-card" id="sidebarFooterCard">
-                    <!-- Top section: Account & Test / Cloud Mode -->
-                    <div class="footer-card-user-row">
-                        <!-- Mode Déconnecté / Test -->
-                        <div class="user-status-group" id="accountLoggedOutState">
-                            <button type="button" class="btn-account-circle" onclick="app.openAuthModal()" title="Se connecter / Créer un compte">
-                                <i class="fa-regular fa-user"></i>
-                            </button>
-                            <div class="user-status-text" onclick="app.openAuthModal()" style="cursor: pointer;" title="Cliquez pour vous connecter">
-                                <div class="user-badge-mode test">
-                                    <span class="dot-test"></span> Mode Test
-                                </div>
-                                <span class="user-action-sub">Se connecter →</span>
-                            </div>
-                        </div>
+                <div class="sidebar-footer-card-compact" id="sidebarFooterCard">
+                    <!-- Profile Icon (Left) -->
+                    <button type="button" class="footer-profile-btn" id="sidebarProfileTrigger" onclick="app.openAuthModal()" title="Espace Cabinet">
+                        <i class="fa-regular fa-user" id="userAvatarIcon"></i>
+                        <span class="avatar-initials-badge" id="userAvatarInitials" style="display: none;">SB</span>
+                    </button>
 
-                        <!-- Mode Connecté (Stéphanie Cloud) -->
-                        <div class="user-status-group" id="accountLoggedInState" style="display: none;">
-                            <div class="user-avatar-circle" id="userAvatarInitials">SB</div>
-                            <div class="user-status-text">
-                                <span class="user-display-name" id="userAccountName">Stéphanie</span>
-                                <div class="user-badge-mode sync">
-                                    <i class="fa-solid fa-cloud"></i> Synchronisé
-                                </div>
-                            </div>
-                            <button type="button" class="btn-card-logout" id="btnLogout" onclick="app.logout()" title="Se déconnecter">
-                                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Divider -->
-                    <div class="footer-card-divider"></div>
-
-                    <!-- Bottom section: Cabinet Live Status -->
-                    <div class="footer-card-live-row">
+                    <!-- Middle: Cabinet Status & Hours -->
+                    <div class="footer-status-info">
                         <div class="live-status-pill open" id="liveStatusBadge">
                             <span class="live-status-dot"></span>
                             <span class="live-status-label" id="liveStatusLabel">Cabinet ouvert</span>
@@ -111,6 +84,16 @@
                             <i class="fa-regular fa-clock"></i>
                             <span id="liveHoursText">Ferme à 19h00</span>
                         </div>
+                    </div>
+
+                    <!-- Right: Auth Action Icon (Login / Logout) -->
+                    <div class="footer-auth-action">
+                        <button type="button" class="btn-auth-icon login" id="btnFooterLogin" onclick="app.openAuthModal()" title="Se connecter">
+                            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        </button>
+                        <button type="button" class="btn-auth-icon logout" id="btnLogout" onclick="app.logout()" title="Se déconnecter" style="display: none;">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -129,17 +112,6 @@
                         <span id="headerDate">Aujourd'hui</span>
                     </div>
                 </div>
-
-                <div class="header-actions">
-                    <button class="btn btn-outline btn-sm" id="btnOpenBlockSlot" title="Bloquer un créneau pour pause ou imprévu">
-                        <i class="fa-solid fa-ban"></i>
-                        <span class="d-none-sm">Bloquer créneau</span>
-                    </button>
-                    <button class="btn btn-primary" id="btnOpenNewAppointment">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Nouveau RDV</span>
-                    </button>
-                </div>
             </header>
 
             <!-- Scrollable Content Body -->
@@ -152,12 +124,8 @@
                     
                     <div class="dashboard-hero">
                         <div class="hero-greeting">
-                            <h1>Bonjour Stéphanie</h1>
-                            <p>Voici le récapitulatif de votre journée et les prochaines séances.</p>
-                        </div>
-                        <div class="hero-badge-cabinet" style="text-align: right;">
-                            <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Cabinet Peymeinade</span>
-                            <span style="font-weight: 600; color: var(--primary-dark); font-size: 0.95rem;">37 Avenue de Boutiny</span>
+                            <h1 id="dashboardGreeting">Bienvenue</h1>
+                            <p id="dashboardGreetingSub">Voici votre récapitulatif.</p>
                         </div>
                     </div>
 
@@ -189,7 +157,7 @@
                             </div>
                             <div class="stat-content">
                                 <span class="stat-value" id="statTotalClients">0</span>
-                                <span class="stat-label">Clientes enregistrées</span>
+                                <span class="stat-label">Clients enregistrés</span>
                             </div>
                         </div>
                     </div>
@@ -243,15 +211,6 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <div class="calendar-zoom-group">
-                                <button class="btn btn-icon-glass" id="calZoomOutBtn" title="Dézoomer l'agenda">
-                                    <i class="fa-solid fa-magnifying-glass-minus"></i>
-                                </button>
-                                <span class="zoom-badge" id="calZoomBadge">100%</span>
-                                <button class="btn btn-icon-glass" id="calZoomInBtn" title="Zoomer l'agenda">
-                                    <i class="fa-solid fa-magnifying-glass-plus"></i>
-                                </button>
-                            </div>
                             <button class="btn btn-primary btn-sm" onclick="app.openNewAppointmentModal()">
                                 <i class="fa-solid fa-plus"></i> Ajouter RDV
                             </button>
@@ -403,8 +362,8 @@
              ========================================================================= -->
         <nav class="mobile-bottom-nav">
             <a href="#" class="mobile-nav-link active" data-view="dashboard">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Tableau</span>
+                <i class="fa-solid fa-house"></i>
+                <span>Accueil</span>
             </a>
             <a href="#" class="mobile-nav-link" data-view="agenda">
                 <i class="fa-regular fa-calendar-days"></i>
@@ -442,7 +401,7 @@
             </div>
             <form id="formNewAppointment">
                 <div class="form-group">
-                    <label>Nom & Prénom de la cliente *</label>
+                    <label>Nom & Prénom *</label>
                     <input type="text" class="form-control" id="apptClientName" required placeholder="Ex: Claire Athenon">
                 </div>
                 <div class="form-row">
@@ -515,6 +474,12 @@
                     <div>
                         <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Tarif</span>
                         <strong id="detailPrice" style="font-size: 1.1rem; color: var(--primary-dark);">-</strong>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Mode de règlement</span>
+                        <div id="detailPaymentBadge" class="payment-badge sur_place">
+                            <i class="fa-solid fa-hand-holding-dollar"></i> <span id="detailPaymentText">Sur place au cabinet</span>
+                        </div>
                     </div>
                     <div>
                         <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Téléphone</span>

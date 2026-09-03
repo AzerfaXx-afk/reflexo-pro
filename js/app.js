@@ -322,8 +322,10 @@ class StephanieProApp {
                 }
             }
 
-            const loggedOutGroup = document.getElementById('accountLoggedOutState');
-            const loggedInGroup = document.getElementById('accountLoggedInState');
+            const avatarIcon = document.getElementById('userAvatarIcon');
+            const avatarInitials = document.getElementById('userAvatarInitials');
+            const btnLogin = document.getElementById('btnFooterLogin');
+            const btnLogout = document.getElementById('btnLogout');
 
             if (user) {
                 this.currentUser = user;
@@ -331,19 +333,24 @@ class StephanieProApp {
                     overlay.classList.add('hidden');
                     setTimeout(() => overlay.style.display = 'none', 400);
                 }
-                if (loggedOutGroup) loggedOutGroup.style.display = 'none';
-                if (loggedInGroup) loggedInGroup.style.display = 'flex';
-                const email = user.email || 'Cabinet Pro';
-                const name = user.user_metadata?.full_name || email.split('@')[0];
-                if (userNameEl) userNameEl.textContent = name.charAt(0).toUpperCase() + name.slice(1);
-                if (userAvatarEl) userAvatarEl.textContent = (email[0] || 'S').toUpperCase();
+                if (avatarIcon) avatarIcon.style.display = 'none';
+                if (avatarInitials) {
+                    avatarInitials.style.display = 'inline';
+                    const email = user.email || 'S';
+                    avatarInitials.textContent = (email[0] || 'S').toUpperCase();
+                }
+                if (btnLogin) btnLogin.style.display = 'none';
+                if (btnLogout) btnLogout.style.display = 'flex';
                 if (mobileAccountText) mobileAccountText.textContent = 'Cabinet';
             } else {
                 this.currentUser = null;
-                if (loggedOutGroup) loggedOutGroup.style.display = 'flex';
-                if (loggedInGroup) loggedInGroup.style.display = 'none';
+                if (avatarIcon) avatarIcon.style.display = 'inline';
+                if (avatarInitials) avatarInitials.style.display = 'none';
+                if (btnLogin) btnLogin.style.display = 'flex';
+                if (btnLogout) btnLogout.style.display = 'none';
                 if (mobileAccountText) mobileAccountText.textContent = 'Connexion';
             }
+            this.renderDashboard();
         };
 
         await checkSession();
@@ -717,6 +724,20 @@ class StephanieProApp {
         const todayAppointments = this.data.appointments
             .filter(a => a.date === todayIso)
             .sort((a, b) => a.time.localeCompare(b.time));
+
+        // Greeting dynamique selon l'utilisateur
+        const greetingEl = document.getElementById('dashboardGreeting');
+        const greetingSubEl = document.getElementById('dashboardGreetingSub');
+        if (this.currentUser) {
+            const email = this.currentUser.email || '';
+            const name = this.currentUser.user_metadata?.full_name || email.split('@')[0];
+            const cleanName = name ? name.charAt(0).toUpperCase() + name.slice(1) : 'Stéphanie';
+            if (greetingEl) greetingEl.textContent = `Bonjour ${cleanName}`;
+            if (greetingSubEl) greetingSubEl.textContent = 'Voici votre récapitulatif.';
+        } else {
+            if (greetingEl) greetingEl.textContent = 'Bienvenue';
+            if (greetingSubEl) greetingSubEl.textContent = 'Connectez-vous pour synchroniser votre planning.';
+        }
 
         // Stats
         const countEl = document.getElementById('statTodayCount');
@@ -1395,6 +1416,17 @@ class StephanieProApp {
         document.getElementById('detailServiceName').textContent = appt.serviceName;
         document.getElementById('detailDateTime').textContent = `${appt.date} à ${appt.time} (${appt.duration} min)`;
         document.getElementById('detailPrice').textContent = `${appt.price} €`;
+
+        // Affichage du mode de règlement clair pour Stéphanie
+        const paymentBadge = document.getElementById('detailPaymentBadge');
+        const isOnline = appt.payment_method === 'en_ligne';
+        if (paymentBadge) {
+            paymentBadge.className = `payment-badge ${isOnline ? 'en_ligne' : 'sur_place'}`;
+            paymentBadge.innerHTML = isOnline 
+                ? '<i class="fa-solid fa-circle-check"></i> <span>Payé en ligne (CB)</span>'
+                : '<i class="fa-solid fa-hand-holding-dollar"></i> <span>À régler sur place au cabinet</span>';
+        }
+
         document.getElementById('detailPhone').textContent = appt.clientPhone || 'Non renseigné';
         document.getElementById('detailEmail').textContent = appt.clientEmail || 'Non renseigné';
         document.getElementById('detailNotes').textContent = appt.notes || 'Aucune note particulière';
