@@ -111,9 +111,19 @@ class SupabaseService {
 
             let schedule = null;
             let bufferTime = 15;
+            let profilePhoto = '';
+            let practitionerName = '';
+            let cabinetInfo = null;
             if (settingsRes.data) {
                 if (settingsRes.data.schedule) schedule = settingsRes.data.schedule;
                 if (settingsRes.data.buffer_time !== undefined) bufferTime = settingsRes.data.buffer_time;
+                if (settingsRes.data.profile_photo) profilePhoto = settingsRes.data.profile_photo;
+                if (settingsRes.data.practitioner_name) practitionerName = settingsRes.data.practitioner_name;
+                cabinetInfo = {
+                    address: settingsRes.data.address || '',
+                    phone: settingsRes.data.phone || '',
+                    email: settingsRes.data.email || ''
+                };
             }
 
             return {
@@ -122,7 +132,10 @@ class SupabaseService {
                 appointments,
                 blockedSlots,
                 schedule,
-                bufferTime
+                bufferTime,
+                profilePhoto,
+                practitionerName,
+                cabinetInfo
             };
         } catch (err) {
             console.error('Erreur lors du chargement Supabase:', err);
@@ -134,8 +147,12 @@ class SupabaseService {
     async upsertClient(client) {
         if (!this.client) return;
         try {
+            const user = (await this.client.auth.getUser())?.data?.user;
+            if (!user) return;
+
             await this.client.from('clients').upsert({
                 id: client.id,
+                user_id: user.id,
                 name: client.name,
                 phone: client.phone || '',
                 email: client.email || '',
@@ -150,8 +167,12 @@ class SupabaseService {
     async upsertService(service) {
         if (!this.client) return;
         try {
+            const user = (await this.client.auth.getUser())?.data?.user;
+            if (!user) return;
+
             await this.client.from('services').upsert({
                 id: service.id,
+                user_id: user.id,
                 name: service.name,
                 category: service.category || 'Massages',
                 duration: service.duration,
@@ -180,8 +201,12 @@ class SupabaseService {
     async upsertAppointment(appt) {
         if (!this.client) return;
         try {
+            const user = (await this.client.auth.getUser())?.data?.user;
+            if (!user) return;
+
             await this.client.from('appointments').upsert({
                 id: appt.id,
+                user_id: user.id,
                 client_id: appt.clientId || null,
                 client_name: appt.clientName,
                 client_phone: appt.clientPhone || '',
@@ -215,8 +240,12 @@ class SupabaseService {
     async upsertBlockedSlot(slot) {
         if (!this.client) return;
         try {
+            const user = (await this.client.auth.getUser())?.data?.user;
+            if (!user) return;
+
             await this.client.from('blocked_slots').upsert({
                 id: slot.id,
+                user_id: user.id,
                 date: slot.date,
                 time: slot.time,
                 duration: slot.duration,
@@ -236,19 +265,25 @@ class SupabaseService {
         }
     }
 
-    /* PARAMÈTRES */
-    async saveSettings({ address, phone, email, bufferTime, schedule }) {
+    /* PARAMÈTRES ET PROFIL */
+    async saveSettings({ address, phone, email, bufferTime, schedule, profilePhoto, practitionerName }) {
         if (!this.client) return;
         try {
+            const user = (await this.client.auth.getUser())?.data?.user;
+            if (!user) return;
+
             await this.client.from('cabinet_settings').upsert({
-                id: 'main',
+                id: user.id,
+                user_id: user.id,
                 address: address || '37 Avenue de Boutiny, 06530 Peymeinade',
                 phone: phone || '06 28 38 83 49',
-                email: email || 'phanybox@gmail.com',
-                buffer_time: bufferTime,
+                email: email || user.email,
+                buffer_time: bufferTime !== undefined ? bufferTime : 15,
                 schedule: schedule,
+                profile_photo: profilePhoto || '',
+                practitioner_name: practitionerName || '',
                 updated_at: new Date().toISOString()
-            });
+            }, { onConflict: 'user_id' });
         } catch (e) {
             console.warn('Sync settings failed:', e);
         }
@@ -288,7 +323,9 @@ class SupabaseService {
 
     async signUp(email, password) {
         if (!this.client) throw new Error('Supabase non initialisé');
-        const redirectUrl = window.location.origin + window.location.pathname;
+        const redirectUrl = window.location.origin.includes('localhost')
+            ? 'http://localhost:8086/'
+            : 'https://reflexo-pro.vercel.app/';
         const { data, error } = await this.client.auth.signUp({
             email,
             password,
@@ -302,10 +339,13 @@ class SupabaseService {
 
     async signInWithOtp(email) {
         if (!this.client) throw new Error('Supabase non initialisé');
+        const redirectUrl = window.location.origin.includes('localhost')
+            ? 'http://localhost:8086/'
+            : 'https://reflexo-pro.vercel.app/';
         const { data, error } = await this.client.auth.signInWithOtp({
             email,
             options: {
-                emailRedirectTo: window.location.origin + window.location.pathname
+                emailRedirectTo: redirectUrl
             }
         });
         if (error) throw error;

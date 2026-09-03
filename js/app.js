@@ -162,8 +162,8 @@ const PRESET_COLORS = [
 class StephanieProApp {
     constructor() {
         window.app = this;
-        this.storageKey = 'stephanie_pro_data_v2';
         this.currentView = 'dashboard';
+        this.currentUser = null;
         this.data = this.loadData();
         this.selectedImage = PRESET_IMAGES[0];
         this.selectedColor = PRESET_COLORS[0];
@@ -173,6 +173,13 @@ class StephanieProApp {
         this.calendar = null;
 
         this.init();
+    }
+
+    getStorageKey() {
+        if (this.currentUser && this.currentUser.id) {
+            return `reflexo_pro_user_${this.currentUser.id}`;
+        }
+        return 'reflexo_pro_guest_data';
     }
 
     loadData() {
@@ -187,7 +194,8 @@ class StephanieProApp {
             categories: ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés']
         };
 
-        const saved = localStorage.getItem(this.storageKey);
+        const key = this.getStorageKey();
+        const saved = localStorage.getItem(key);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
@@ -208,7 +216,8 @@ class StephanieProApp {
     }
 
     saveData() {
-        localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+        const key = this.getStorageKey();
+        localStorage.setItem(key, JSON.stringify(this.data));
     }
 
     init() {
@@ -365,7 +374,12 @@ class StephanieProApp {
             const btnLogout = document.getElementById('btnLogout');
 
             if (user) {
+                const prevUserId = this.currentUser?.id;
                 this.currentUser = user;
+                if (prevUserId !== user.id) {
+                    this.data = this.loadData();
+                }
+
                 if (overlay) {
                     overlay.classList.add('hidden');
                     setTimeout(() => overlay.style.display = 'none', 400);
@@ -384,10 +398,7 @@ class StephanieProApp {
             } else {
                 this.currentUser = null;
                 // Sécurité stricte : application 100% vierge, aucune donnée en mémoire
-                this.data.appointments = [];
-                this.data.clients = [];
-                this.data.blockedSlots = [];
-                this.data.notifications = [];
+                this.data = this.loadData();
                 
                 // Afficher l'écran d'authentification obligatoire
                 if (overlay) {
@@ -401,24 +412,27 @@ class StephanieProApp {
                 if (avatarInitials) avatarInitials.style.display = 'none';
                 if (btnLogin) btnLogin.style.display = 'flex';
                 if (btnLogout) btnLogout.style.display = 'none';
-                if (mobileAccountText) mobileAccountText.textContent = 'Connexion';
+                if (mobileAccountText) mobileAccountText.textContent = 'Compte';
             }
             this.renderAll();
+            if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
         };
 
         await checkSession();
 
         // Listen for auth state changes
-        window.supabaseService?.onAuthStateChange((event, session) => {
+        window.supabaseService?.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' && session?.user) {
                 this.currentUser = session.user;
                 localStorage.setItem('stephanie_auth_user', JSON.stringify(session.user));
-                checkSession();
+                this.data = this.loadData();
+                await checkSession();
                 this.syncWithSupabase();
+                this.showToast('Connexion réussie !', 'success');
             } else if (event === 'SIGNED_OUT') {
                 this.currentUser = null;
                 localStorage.removeItem('stephanie_auth_user');
-                checkSession();
+                await checkSession();
             }
         });
 
@@ -473,35 +487,38 @@ class StephanieProApp {
 
                 if (authMode === 'register') {
                     const res = await window.supabaseService.signUp(email, password);
-                    let sessionUser = res?.user;
-
-                    // Si pas de session directe, tentative d'auto-login immédiate grâce au trigger auto-confirm
-                    if (!res?.session) {
-                        try {
-                            const loginRes = await window.supabaseService.signInWithPassword(email, password);
-                            sessionUser = loginRes?.user || sessionUser;
-                        } catch (e) {
-                            console.log('Auto-login attempt:', e);
-                        }
-                    }
-
-                    if (sessionUser) {
-                        this.currentUser = sessionUser;
+                    
+                    if (res?.session) {
+                        this.currentUser = res.session.user;
                         localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
+                        this.data = this.loadData();
                         this.showToast('Compte cabinet créé et connecté !', 'success');
                         this.closeAuthModal();
                         await checkSession();
                         this.syncWithSupabase();
                     } else {
                         alertBox.className = 'auth-alert success';
-                        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> <div><strong>Compte créé avec succès !</strong><br>Vous pouvez maintenant vous connecter avec vos identifiants.</div>`;
+                        alertBox.innerHTML = `
+                            <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; padding: 4px 0;">
+                                <div style="font-weight: 700; font-size: 0.95rem; color: #166534;">
+                                    <i class="fa-regular fa-envelope-open" style="margin-right: 6px;"></i> Email de confirmation envoyé !
+                                </div>
+                                <div style="font-size: 0.84rem; line-height: 1.45; color: #15803d;">
+                                    Un lien d'activation sécurisé a été envoyé à <strong>${email}</strong>.<br>
+                                    Veuillez ouvrir votre boîte mail et cliquer sur le lien pour valider et accéder à votre espace cabinet Reflexo Pro.
+                                </div>
+                            </div>
+                        `;
                         alertBox.style.display = 'flex';
-                        tabLogin?.click();
+                        this.showToast('Email de confirmation envoyé ! Vérifiez votre boîte mail.', 'info');
+                        const passField = document.getElementById('authPassword');
+                        if (passField) passField.value = '';
                     }
                 } else {
                     const res = await window.supabaseService.signInWithPassword(email, password);
                     this.currentUser = res.user || { email };
                     localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
+                    this.data = this.loadData();
                     this.showToast(`Connecté avec succès (${email})`, 'success');
                     this.closeAuthModal();
                     await checkSession();
@@ -516,7 +533,7 @@ class StephanieProApp {
                         alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div><strong>Ce compte existe déjà.</strong><br>Cliquez sur <strong>Connexion</strong> ci-dessus pour vous connecter avec ce mot de passe.</div>`;
                         tabLogin?.click();
                     } else if (msg.toLowerCase().includes('email not confirmed')) {
-                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div><strong>Email en attente</strong><br>Veuillez vous reconnecter.</div>`;
+                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div><strong>Email non confirmé</strong><br>Veuillez cliquer sur le lien envoyé à <strong>${email}</strong> pour activer votre compte.</div>`;
                     } else if (msg.toLowerCase().includes('invalid login credentials')) {
                         alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>Mot de passe ou email incorrect.<br>Veuillez vérifier votre saisie.</div>`;
                     } else {
@@ -625,9 +642,12 @@ class StephanieProApp {
                     if (Array.isArray(cloudState.appointments)) this.data.appointments = cloudState.appointments;
                     if (Array.isArray(cloudState.blockedSlots)) this.data.blockedSlots = cloudState.blockedSlots;
                     if (Array.isArray(cloudState.clients)) this.data.clients = cloudState.clients;
-                    if (cloudState.settings) {
-                        this.applyLoadedSettings(cloudState.settings);
-                    }
+                    if (cloudState.schedule) this.data.schedule = cloudState.schedule;
+                    if (cloudState.bufferTime !== undefined) this.data.bufferTime = cloudState.bufferTime;
+                    if (cloudState.profilePhoto) this.data.profilePhoto = cloudState.profilePhoto;
+                    if (cloudState.practitionerName) this.data.practitionerName = cloudState.practitionerName;
+                    if (cloudState.cabinetInfo) this.data.cabinetInfo = cloudState.cabinetInfo;
+
                     this.saveData();
                     this.renderAll();
                     if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
