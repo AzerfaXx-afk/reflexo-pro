@@ -938,21 +938,25 @@ class StephanieProApp {
 
     async syncWithSupabase() {
         if (!window.supabaseService) return;
-        // Mode Test : si non connectée, on n'altère pas la base cloud Supabase
-        if (!this.currentUser) {
-            console.log('🧪 Mode Test actif : données locales uniquement, aucune écriture Cloud');
-            return;
-        }
+        const targetUserId = this.currentUser ? this.currentUser.id : '5de24ee0-82f0-495a-b452-ad993e0476dd';
         try {
             const connected = await window.supabaseService.testConnection();
             if (connected) {
-                console.log('⚡ Supabase Cloud connecté pour', this.currentUser.email);
+                console.log('⚡ Supabase Cloud connecté pour', this.currentUser ? this.currentUser.email : 'Cabinet Stéphanie');
 
                 // Activer l'écoute temps réel multi-écrans (PC <-> Mobile)
                 if (!this._realtimeSubscribed) {
                     this._realtimeSubscribed = true;
-                    window.supabaseService.subscribeToChanges(this.currentUser.id, async (table) => {
-                        console.log('⚡ Synchronisation en direct reçue pour:', table);
+                    window.supabaseService.subscribeToChanges(targetUserId, async (table, payload) => {
+                        console.log('⚡ Synchronisation en direct reçue pour:', table, payload);
+
+                        // Si nouveau RDV en ligne, afficher notification immédiate
+                        if (table === 'appointments' && payload && payload.eventType === 'INSERT' && payload.new) {
+                            const nA = payload.new;
+                            this.addNotification(`Nouveau RDV en ligne : ${nA.client_name} (${nA.service_name}) le ${nA.date} à ${nA.time}`);
+                            this.showToast(`🔔 Nouveau RDV en ligne : ${nA.client_name} !`, 'success');
+                        }
+
                         const freshState = await window.supabaseService.loadFullState();
                         if (freshState) {
                             if (Array.isArray(freshState.services)) this.data.services = freshState.services;
@@ -1328,31 +1332,78 @@ class StephanieProApp {
             }
         }
 
-        // Fil des notifications (Reflexo Pro style)
+        // Fil des dernières réservations & notifications (Reflexo Pro style)
         const notifFeedEl = document.getElementById('notificationsFeed');
         if (notifFeedEl) {
-            if (!this.data.notifications || this.data.notifications.length === 0) {
+            // Extraire les réservations les plus récentes (excluant les blocs "Libre")
+            const validAppointments = [...(this.data.appointments || [])]
+                .filter(a => a.clientName && a.clientName !== 'Libre');
+
+            // Trier par date/heure
+            validAppointments.sort((a, b) => {
+                const dtA = (a.date || '') + ' ' + (a.time || '');
+                const dtB = (b.date || '') + ' ' + (b.time || '');
+                return dtB.localeCompare(dtA);
+            });
+
+            const recentAppts = validAppointments.slice(0, 8);
+
+            if (recentAppts.length === 0 && (!this.data.notifications || this.data.notifications.length === 0)) {
                 notifFeedEl.innerHTML = `
                     <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
                         <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-light); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 1.25rem; color: var(--primary);">
                             <i class="fa-regular fa-bell"></i>
                         </div>
-                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-heading); margin-bottom: 4px;">Aucune notification</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-heading); margin-bottom: 4px;">Aucune réservation récente</div>
                         <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin: 0;">
-                            Toutes vos nouvelles réservations et activités récentes apparaîtront ici.
+                            Toutes vos nouvelles réservations et activités récentes apparaîtront ici en direct.
                         </p>
                     </div>
                 `;
             } else {
-                notifFeedEl.innerHTML = this.data.notifications.slice(0, 8).map(n => `
-                    <div class="notif-item">
-                        <div class="notif-icon-bubble"><i class="fa-solid fa-bell"></i></div>
-                        <div class="notif-body">
-                            <div class="notif-text">${n.text}</div>
-                            <div class="notif-time">${n.time}</div>
+                let itemsHtml = '';
+
+                // Si des notifications explicites existent
+                if (this.data.notifications && this.data.notifications.length > 0) {
+                    itemsHtml += this.data.notifications.slice(0, 3).map(n => `
+                        <div class="notif-item highlight" style="border-left: 3px solid var(--primary); background: rgba(95, 158, 160, 0.05);">
+                            <div class="notif-icon-bubble" style="background: rgba(95, 158, 160, 0.15); color: var(--primary);"><i class="fa-solid fa-bell"></i></div>
+                            <div class="notif-body">
+                                <div class="notif-text" style="font-weight: 600; font-size: 0.86rem; color: var(--text-heading);">${n.text}</div>
+                                <div class="notif-time" style="font-size: 0.74rem; color: var(--text-muted);">${n.time}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
+                }
+
+                // Afficher les rendez-vous récents avec style pro
+                itemsHtml += recentAppts.map(a => {
+                    const isUpcoming = a.date >= todayIso;
+                    const dateFormatted = new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+                    return `
+                        <div class="notif-item appointment-item-feed" onclick="app.openAppointmentDetails('${a.id}')" style="cursor: pointer; transition: all 0.2s ease; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px;">
+                            <div class="notif-icon-bubble" style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: ${isUpcoming ? 'rgba(16, 185, 129, 0.12)' : 'rgba(95, 158, 160, 0.12)'}; color: ${isUpcoming ? '#059669' : 'var(--primary)'};">
+                                <i class="fa-solid ${isUpcoming ? 'fa-calendar-check' : 'fa-clock-rotate-left'}"></i>
+                            </div>
+                            <div class="notif-body" style="flex: 1; min-width: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 6px;">
+                                    <div class="notif-text" style="font-weight: 700; color: var(--text-heading); font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.clientName}</div>
+                                    <span style="font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; white-space: nowrap; background: ${isUpcoming ? '#ECFDF5' : '#F1F5F9'}; color: ${isUpcoming ? '#059669' : '#64748B'};">
+                                        ${isUpcoming ? 'À venir' : 'Passé'}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-top: 1px;">
+                                    ${a.serviceName} • ${Number(a.price).toFixed(2)} €
+                                </div>
+                                <div class="notif-time" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                    <i class="fa-regular fa-clock" style="font-size: 0.7rem;"></i> ${dateFormatted} à ${a.time} (${a.duration} min)
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                notifFeedEl.innerHTML = itemsHtml;
             }
         }
     }
@@ -2613,16 +2664,35 @@ class StephanieProApp {
         }
 
         this.saveData();
-        if (this.currentUser && savedService) {
+        if (savedService) {
             window.supabaseService?.upsertService(savedService);
-            this.showToast('Prestation synchronisée sur le Cloud !', 'success');
-        } else {
-            this.showToast('Mode Test : prestation enregistrée localement (non synchronisée au Cloud)', 'info');
+            try {
+                const bc = new BroadcastChannel('reflexo_services_sync');
+                bc.postMessage('update_services');
+            } catch (e) {}
+            this.showToast('✨ Prestation synchronisée en direct sur le site !', 'success');
         }
 
         document.getElementById('modalNewService').classList.remove('open');
         this.renderCatalogue();
         this.populateServiceDropdown();
+    }
+
+    async deleteService(id) {
+        const srv = this.data.services.find(s => s.id === id);
+        const name = srv ? srv.name : 'cette prestation';
+        if (confirm(`Voulez-vous vraiment supprimer "${name}" du catalogue ?`)) {
+            this.data.services = this.data.services.filter(s => s.id !== id);
+            this.saveData();
+            window.supabaseService?.deleteService(id);
+            try {
+                const bc = new BroadcastChannel('reflexo_services_sync');
+                bc.postMessage('update_services');
+            } catch (e) {}
+            this.renderCatalogue();
+            this.populateServiceDropdown();
+            this.showToast(`Prestation "${name}" supprimée du catalogue et du site.`, 'info');
+        }
     }
 
     /* GESTION ET MODIFICATION DES PAUSES ET CRÉNEAUX BLOQUÉS */

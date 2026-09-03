@@ -176,11 +176,11 @@ class SupabaseService {
         if (!this.client) return;
         try {
             const user = (await this.client.auth.getUser())?.data?.user;
-            if (!user) return;
+            const targetUserId = user?.id || '5de24ee0-82f0-495a-b452-ad993e0476dd';
 
             await this.client.from('services').upsert({
                 id: service.id,
-                user_id: user.id,
+                user_id: targetUserId,
                 name: service.name,
                 category: service.category || 'Massages',
                 duration: service.duration,
@@ -191,6 +191,7 @@ class SupabaseService {
                 color_border: service.colorBorder || '#5F9EA0',
                 color_text: service.colorText || '#1F383E'
             });
+            console.log('⚡ Prestation synchronisée sur Supabase :', service.name);
         } catch (e) {
             console.warn('Sync service failed:', e);
         }
@@ -377,18 +378,22 @@ class SupabaseService {
     }
 
     subscribeToChanges(userId, callback) {
-        if (!this.client || !userId) return;
+        if (!this.client) return;
+        const targetUserId = userId || '5de24ee0-82f0-495a-b452-ad993e0476dd';
         if (this.realtimeChannel) {
             try { this.client.removeChannel(this.realtimeChannel); } catch (e) {}
         }
 
         this.realtimeChannel = this.client
-            .channel('cabinet-realtime-' + userId)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => callback('appointments'))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => callback('clients'))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => callback('services'))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'cabinet_settings' }, () => callback('cabinet_settings'))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'blocked_slots' }, () => callback('blocked_slots'))
+            .channel('cabinet-realtime-channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, (payload) => {
+                console.log('⚡ RDV changé en direct :', payload);
+                callback('appointments', payload);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, (payload) => callback('clients', payload))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, (payload) => callback('services', payload))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'cabinet_settings' }, (payload) => callback('cabinet_settings', payload))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'blocked_slots' }, (payload) => callback('blocked_slots', payload))
             .subscribe();
     }
 }
