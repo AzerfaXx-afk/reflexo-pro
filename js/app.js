@@ -845,15 +845,17 @@ class StephanieProApp {
        ========================================================================= */
     renderCatalogue() {
         const container = document.getElementById('servicesCardsGrid');
+        const headerBtnWrap = document.getElementById('catalogueHeaderBtnWrap');
         if (!container) return;
 
         if (this.data.services.length === 0) {
+            if (headerBtnWrap) headerBtnWrap.style.display = 'none';
             container.innerHTML = `
-                <div class="empty-state" style="grid-column: 1 / -1; padding: 60px 20px;">
-                    <div class="empty-state-icon" style="font-size: 3.5rem;"><i class="fa-solid fa-spa"></i></div>
-                    <h3 style="font-size: 1.4rem; margin-bottom: 8px;">Votre catalogue de soins est vide</h3>
-                    <p style="margin-bottom: 24px; max-width: 440px;">
-                        Ajoutez vous-même vos massages, réflexologies et soins avec vos tarifs, photos et descriptions sur-mesure.
+                <div class="empty-state" style="grid-column: 1 / -1; padding: 50px 20px;">
+                    <div class="empty-state-icon" style="font-size: 3.2rem;"><i class="fa-solid fa-spa"></i></div>
+                    <h3 style="font-size: 1.35rem; margin-bottom: 8px;">Votre catalogue de soins est vide</h3>
+                    <p style="margin-bottom: 22px; max-width: 440px;">
+                        Ajoutez vos massages, réflexologies et soins avec vos tarifs, photos et descriptions sur-mesure.
                     </p>
                     <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                         <button class="btn btn-primary" onclick="app.openNewServiceModal()">
@@ -864,6 +866,8 @@ class StephanieProApp {
             `;
             return;
         }
+
+        if (headerBtnWrap) headerBtnWrap.style.display = 'block';
 
         container.innerHTML = this.data.services.map(s => `
             <div class="service-card">
@@ -919,8 +923,18 @@ class StephanieProApp {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                        ${filterQuery ? 'Aucun client ne correspond à votre recherche.' : 'Aucun client enregistré pour l\'instant. Vos clients s\'ajouteront automatiquement à chaque prise de rendez-vous.'}
+                    <td colspan="5" style="text-align: center; padding: 45px 20px; color: var(--text-muted); white-space: normal;">
+                        <div style="max-width: 380px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-light); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.25rem; margin-bottom: 4px;">
+                                <i class="fa-solid fa-user-group"></i>
+                            </div>
+                            <strong style="font-size: 1.05rem; color: var(--text-heading); font-family: var(--font-heading);">
+                                ${filterQuery ? 'Aucun résultat' : 'Aucun client enregistré'}
+                            </strong>
+                            <p style="font-size: 0.85rem; line-height: 1.45; margin: 0; color: var(--text-muted);">
+                                ${filterQuery ? 'Aucun client ne correspond à votre recherche.' : 'Vos clients s\'enregistrent automatiquement dès qu\'un rendez-vous est pris en ligne ou au cabinet.'}
+                            </p>
+                        </div>
                     </td>
                 </tr>
             `;

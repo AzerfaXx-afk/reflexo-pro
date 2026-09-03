@@ -226,6 +226,11 @@
                                 Gérez vos prestations, durées, tarifs et photos.
                             </p>
                         </div>
+                        <div id="catalogueHeaderBtnWrap" style="display: none;">
+                            <button class="btn btn-primary btn-sm" id="btnOpenNewService" onclick="app.openNewServiceModal()">
+                                <i class="fa-solid fa-plus"></i> Ajouter une prestation
+                            </button>
+                        </div>
                     </div>
 
                     <div class="services-cards-grid" id="servicesCardsGrid">
@@ -244,7 +249,7 @@
                         <div>
                             <h2>Clients</h2>
                             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
-                                Coordonnées et historique complet des rendez-vous.
+                                Coordonnées et historique complet des rendez-vous de vos clients.
                             </p>
                         </div>
 
@@ -280,9 +285,9 @@
                 <section id="view-settings" class="view-panel">
                     
                     <div style="max-width: 680px; margin: 0 auto;">
-                        <h2 style="margin-bottom: 6px;">Paramètres du Cabinet</h2>
+                        <h2 style="margin-bottom: 6px;">Paramètres & Horaires</h2>
                         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">
-                            Disponibilités du cabinet, temps de battement et synchronisation avec vos appareils.
+                            Disponibilités du cabinet et temps de battement entre les séances.
                         </p>
 
                         <!-- Bloc 1: Horaires d'ouverture par jour -->
