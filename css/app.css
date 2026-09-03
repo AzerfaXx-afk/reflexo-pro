@@ -232,7 +232,7 @@ input, select, textarea {
 /* ===== BOUTON AWWWARDS : INSTALLER L'APP ===== */
 .sidebar-install-box {
     margin-top: 14px;
-    padding-top: 12px;
+    padding-top: 10px;
     border-top: 1px dashed rgba(95, 158, 160, 0.25);
 }
 
@@ -242,89 +242,37 @@ input, select, textarea {
     align-items: center;
     gap: 12px;
     padding: 10px 14px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(95, 158, 160, 0.08) 0%, rgba(200, 169, 126, 0.12) 100%);
-    border: 1px solid rgba(95, 158, 160, 0.28);
-    color: var(--text-dark);
+    border-radius: var(--radius-sm);
+    background: rgba(95, 158, 160, 0.08);
+    border: 1px solid rgba(95, 158, 160, 0.22);
+    color: var(--primary-dark);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 600;
     cursor: pointer;
     text-align: left;
-    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
 }
 
-.btn-sidebar-install::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-    transform: skewX(-25deg);
-    transition: 0.6s ease;
-}
-
-.btn-sidebar-install:hover::before {
-    left: 140%;
+.btn-sidebar-install i {
+    font-size: 1rem;
+    color: var(--primary);
+    transition: transform 0.25s ease, color 0.25s ease;
 }
 
 .btn-sidebar-install:hover {
-    background: linear-gradient(135deg, rgba(95, 158, 160, 0.16) 0%, rgba(200, 169, 126, 0.22) 100%);
-    border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(95, 158, 160, 0.18);
-}
-
-.install-icon-wrap {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    background: #fff;
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.95rem;
-    box-shadow: 0 2px 8px rgba(31, 56, 62, 0.08);
-    flex-shrink: 0;
-    transition: transform 0.25s ease;
-}
-
-.btn-sidebar-install:hover .install-icon-wrap {
-    transform: scale(1.08) translateY(-1px);
-    color: var(--primary-dark);
-}
-
-.install-info {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.25;
-    flex: 1;
-}
-
-.install-title {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--primary-dark);
-    letter-spacing: -0.01em;
-}
-
-.install-sub {
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.install-badge {
-    font-size: 0.62rem;
-    font-weight: 700;
-    color: #fff;
     background: var(--primary);
-    padding: 2px 6px;
-    border-radius: 6px;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+    border-color: var(--primary);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(95, 158, 160, 0.25);
+}
+
+.btn-sidebar-install:hover i {
+    color: #ffffff;
+    transform: translateY(1px);
 }
 
 /* ===== MODAL GUIDE D'INSTALLATION PWA ===== */

@@ -848,7 +848,7 @@ class StephanieProApp {
         if (el) el.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
     }
 
-    /* STATUT DU CABINET EN DIRECT (HORAIRES RÉELS) */
+    /* STATUT DU CABINET EN DIRECT (HORAIRES RÉELS DU JOUR ET PROCHAINE OUVERTURE) */
     updateCabinetLiveStatus() {
         const badge = document.getElementById('liveStatusBadge');
         const label = document.getElementById('liveStatusLabel');
@@ -861,12 +861,12 @@ class StephanieProApp {
         const schedIndex = dayMap[dayIndex];
 
         const schedule = this.data.schedule || [
-            { day: 'Lundi', open: true, start: '08:30', end: '19:00' },
-            { day: 'Mardi', open: true, start: '08:30', end: '19:00' },
-            { day: 'Mercredi', open: true, start: '08:30', end: '19:00' },
-            { day: 'Jeudi', open: true, start: '08:30', end: '19:00' },
-            { day: 'Vendredi', open: true, start: '08:30', end: '19:00' },
-            { day: 'Samedi', open: true, start: '09:00', end: '18:00' },
+            { day: 'Lundi', open: true, start: '08:30', end: '18:30' },
+            { day: 'Mardi', open: true, start: '08:30', end: '18:30' },
+            { day: 'Mercredi', open: true, start: '08:30', end: '18:30' },
+            { day: 'Jeudi', open: true, start: '08:30', end: '18:30' },
+            { day: 'Vendredi', open: true, start: '08:30', end: '18:30' },
+            { day: 'Samedi', open: false, start: '09:00', end: '18:00' },
             { day: 'Dimanche', open: false, start: '09:00', end: '18:00' }
         ];
 
@@ -874,8 +874,14 @@ class StephanieProApp {
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
         const parseMinutes = (timeStr) => {
+            if (!timeStr) return 0;
             const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
+            return (h || 0) * 60 + (m || 0);
+        };
+
+        const formatHour = (timeStr) => {
+            if (!timeStr) return '';
+            return timeStr.replace(':', 'h');
         };
 
         let isOpen = false;
@@ -889,17 +895,20 @@ class StephanieProApp {
             if (currentMinutes >= startMin && currentMinutes < endMin) {
                 isOpen = true;
                 statusText = 'Cabinet ouvert';
-                detailText = `Ferme à ${todaySched.end.replace(':', 'h')}`;
+                detailText = `Ferme à ${formatHour(todaySched.end)}`;
             } else if (currentMinutes < startMin) {
+                isOpen = false;
                 statusText = 'Cabinet fermé';
-                detailText = `Ouvre à ${todaySched.start.replace(':', 'h')}`;
+                detailText = `Ouvre à ${formatHour(todaySched.start)}`;
             } else {
+                isOpen = false;
                 statusText = 'Cabinet fermé';
-                detailText = 'Fermé pour la journée';
+                detailText = this.findNextOpeningText(schedIndex, schedule);
             }
         } else {
+            isOpen = false;
             statusText = 'Cabinet fermé';
-            detailText = 'Fermé aujourd\'hui';
+            detailText = this.findNextOpeningText(schedIndex, schedule);
         }
 
         if (isOpen) {
@@ -916,8 +925,27 @@ class StephanieProApp {
         const mobileLabel = document.getElementById('mobileLiveStatusLabel');
         if (mobileBadge && mobileLabel) {
             mobileBadge.className = isOpen ? 'live-status-pill open' : 'live-status-pill closed';
-            mobileLabel.textContent = isOpen ? 'Ouvert' : 'Fermé';
+            mobileLabel.textContent = isOpen ? `Ouvert • ${detailText}` : `Fermé • ${detailText}`;
         }
+    }
+
+    findNextOpeningText(currentSchedIndex, schedule) {
+        if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
+            return 'Fermé';
+        }
+        for (let offset = 1; offset <= 7; offset++) {
+            const nextIdx = (currentSchedIndex + offset) % schedule.length;
+            const nextDay = schedule[nextIdx];
+            if (nextDay && nextDay.open) {
+                const hourStr = (nextDay.start || '08:30').replace(':', 'h');
+                if (offset === 1) {
+                    return `Ouvre demain à ${hourStr}`;
+                } else {
+                    return `Ouvre ${nextDay.day.toLowerCase()} à ${hourStr}`;
+                }
+            }
+        }
+        return 'Fermé';
     }
 
     /* ========================================================================= 
@@ -1409,10 +1437,34 @@ class StephanieProApp {
             return;
         }
 
+        const nowIsoDate = new Date().toISOString().split('T')[0];
+        const nowTime = new Date().toTimeString().slice(0, 5);
+        const nowKey = nowIsoDate + ' ' + nowTime;
+
         tbody.innerHTML = filtered.map(c => {
             const clientAppts = this.data.appointments.filter(a => a.clientName && a.clientName.toLowerCase() === c.name.toLowerCase());
             const totalSpent = clientAppts.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
             const safeName = (c.name || 'Client').replace(/'/g, "\\'");
+
+            // Prochains rendez-vous (futurs ou aujourd'hui après l'heure)
+            const upcomingAppts = clientAppts
+                .filter(a => (a.date + ' ' + (a.time || '00:00')) >= nowKey)
+                .sort((a, b) => (a.date + ' ' + a.time).localeCompare(b.date + ' ' + b.time));
+
+            let btnActionHtml = '';
+            if (upcomingAppts.length > 0) {
+                btnActionHtml = `
+                    <button class="btn btn-outline btn-sm" onclick="app.openClientHistoryModal('${safeName}')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; border-color: var(--primary); color: var(--primary-dark); background: rgba(95, 158, 160, 0.08);">
+                        <i class="fa-solid fa-calendar-check" style="color: var(--primary);"></i> Voir les prochains RDV (${upcomingAppts.length})
+                    </button>
+                `;
+            } else {
+                btnActionHtml = `
+                    <button class="btn btn-outline btn-sm" onclick="app.openClientHistoryModal('${safeName}')" style="display: inline-flex; align-items: center; gap: 6px; opacity: 0.85;">
+                        <i class="fa-regular fa-calendar"></i> Voir les prochains RDV
+                    </button>
+                `;
+            }
 
             return `
                 <tr>
@@ -1425,9 +1477,7 @@ class StephanieProApp {
                     <td>${c.email || '-'}</td>
                     <td>${clientAppts.length} rendez-vous (${totalSpent} €)</td>
                     <td>
-                        <button class="btn btn-outline btn-sm" onclick="app.openClientHistoryModal('${safeName}')" style="display: inline-flex; align-items: center; gap: 6px;">
-                            <i class="fa-regular fa-calendar-check"></i> Voir les RDV (${clientAppts.length})
-                        </button>
+                        ${btnActionHtml}
                     </td>
                 </tr>
             `;
@@ -1439,16 +1489,27 @@ class StephanieProApp {
         const modal = document.getElementById('modalClientHistory');
         if (!modal) return;
 
-        const appts = this.data.appointments
-            .filter(a => a.clientName && a.clientName.toLowerCase() === clientName.toLowerCase())
+        const nowIsoDate = new Date().toISOString().split('T')[0];
+        const nowTime = new Date().toTimeString().slice(0, 5);
+        const nowKey = nowIsoDate + ' ' + nowTime;
+
+        const allAppts = this.data.appointments
+            .filter(a => a.clientName && a.clientName.toLowerCase() === clientName.toLowerCase());
+
+        const upcomingAppts = allAppts
+            .filter(a => (a.date + ' ' + (a.time || '00:00')) >= nowKey)
+            .sort((a, b) => (a.date + ' ' + a.time).localeCompare(b.date + ' ' + b.time));
+
+        const pastAppts = allAppts
+            .filter(a => (a.date + ' ' + (a.time || '00:00')) < nowKey)
             .sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
 
-        const totalSpent = appts.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+        const totalSpent = allAppts.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
 
         document.getElementById('historyClientName').textContent = client.name;
         document.getElementById('historyClientPhone').textContent = client.phone || 'Non renseigné';
-        document.getElementById('historyClientSpent').textContent = `${totalSpent} € (${appts.length} soins)`;
-        document.getElementById('historyCountBadge').textContent = `${appts.length} rendez-vous au total`;
+        document.getElementById('historyClientSpent').textContent = `${totalSpent} € (${allAppts.length} soins)`;
+        document.getElementById('historyCountBadge').textContent = `${upcomingAppts.length} prochain(s) RDV • ${allAppts.length} au total`;
 
         const callBtn = document.getElementById('historyCallBtn');
         const smsBtn = document.getElementById('historySmsBtn');
@@ -1463,34 +1524,73 @@ class StephanieProApp {
         }
 
         const listContainer = document.getElementById('historyAppointmentsList');
-        if (appts.length === 0) {
-            listContainer.innerHTML = `
-                <div style="text-align: center; padding: 25px 15px; color: var(--text-muted); font-size: 0.88rem;">
-                    Aucun rendez-vous enregistré pour ce client pour le moment.
+        
+        let html = '';
+
+        // 1. SECTION MAJEURE : PROCHAINS RENDEZ-VOUS
+        html += `
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-calendar-check" style="color: var(--primary);"></i> Prochains rendez-vous (${upcomingAppts.length})
+                    </span>
+                    ${upcomingAppts.length > 0 ? `<span class="badge badge-open" style="font-size: 0.72rem; padding: 2px 8px;">À venir</span>` : ''}
+                </div>
+        `;
+
+        if (upcomingAppts.length === 0) {
+            html += `
+                <div style="background: var(--bg-light); border: 1px dashed rgba(95,158,160,0.3); border-radius: var(--radius-sm); padding: 18px 14px; text-align: center; color: var(--text-muted); font-size: 0.86rem;">
+                    <i class="fa-regular fa-calendar-xmark" style="font-size: 1.3rem; color: var(--primary); display: block; margin-bottom: 6px; opacity: 0.6;"></i>
+                    Aucun rendez-vous à venir planifié pour ce client.
                 </div>
             `;
         } else {
-            listContainer.innerHTML = appts.map(a => {
-                return `
-                    <div style="background: var(--surface); border: 1px solid rgba(0,0,0,0.06); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-                        <div>
-                            <div style="font-weight: 600; color: var(--text-heading); font-size: 0.92rem;">
-                                ${a.serviceName || 'Soin'}
-                            </div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
-                                <i class="fa-regular fa-calendar" style="margin-right: 4px;"></i> ${a.date} à ${a.time} (${a.duration || 60} min)
-                            </div>
+            html += upcomingAppts.map(a => `
+                <div style="background: linear-gradient(135deg, rgba(95,158,160,0.08) 0%, rgba(200,169,126,0.08) 100%); border: 1px solid rgba(95,158,160,0.32); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                    <div>
+                        <div style="font-weight: 700; color: var(--primary-dark); font-size: 0.95rem;">
+                            ${a.serviceName || 'Soin'}
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-weight: 700; color: var(--primary-dark); font-size: 0.92rem;">${a.price || 80} €</span>
-                            <button type="button" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem;" onclick="app.closeClientHistoryAndOpenAppt('${a.id}')">
-                                <i class="fa-regular fa-pen-to-square"></i> Modifier
-                            </button>
+                        <div style="font-size: 0.82rem; color: var(--text-dark); margin-top: 3px; font-weight: 500;">
+                            <i class="fa-solid fa-calendar-day" style="color: var(--primary); margin-right: 5px;"></i> ${a.date} à <strong>${a.time}</strong> (${a.duration || 60} min)
                         </div>
                     </div>
-                `;
-            }).join('');
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-weight: 700; color: var(--primary-dark); font-size: 0.95rem;">${a.price || 80} €</span>
+                        <button type="button" class="btn btn-primary btn-sm" style="padding: 5px 10px; font-size: 0.78rem;" onclick="app.closeClientHistoryAndOpenAppt('${a.id}')">
+                            <i class="fa-regular fa-pen-to-square"></i> Modifier
+                        </button>
+                    </div>
+                </div>
+            `).join('');
         }
+        html += `</div>`;
+
+        // 2. SECTION SECONDAIRE : HISTORIQUE PASSÉ (PLIÉ PAR DÉFAUT)
+        if (pastAppts.length > 0) {
+            html += `
+                <details style="border: 1px solid rgba(0,0,0,0.06); border-radius: var(--radius-sm); padding: 8px 12px; background: var(--surface);">
+                    <summary style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-clock-rotate-left" style="margin-right: 6px;"></i> Historique passé (${pastAppts.length} rendez-vous passés)</span>
+                        <span style="font-size: 0.72rem; color: var(--primary); font-weight: 500;">Afficher / Masquer</span>
+                    </summary>
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                        ${pastAppts.map(a => `
+                            <div style="background: var(--bg-light); border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; opacity: 0.85;">
+                                <div>
+                                    <span style="font-weight: 600; color: var(--text-heading);">${a.serviceName || 'Soin'}</span>
+                                    <span style="color: var(--text-muted); margin-left: 8px;">${a.date} à ${a.time}</span>
+                                </div>
+                                <span style="font-weight: 600; color: var(--text-dark);">${a.price || 0} €</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </details>
+            `;
+        }
+
+        listContainer.innerHTML = html;
 
         document.getElementById('historyNewApptBtn').onclick = () => {
             modal.classList.remove('open');
@@ -2481,12 +2581,12 @@ class StephanieProApp {
                 <div class="schedule-time-row">
                     <div class="time-field-box">
                         <span class="time-field-label">Début</span>
-                        <input type="time" value="${s.start}" onchange="app.updateDayTime(${idx}, 'start', this.value)">
+                        <input type="time" value="${s.start}" oninput="app.updateDayTime(${idx}, 'start', this.value)" onchange="app.updateDayTime(${idx}, 'start', this.value)">
                     </div>
                     <span class="time-arrow">à</span>
                     <div class="time-field-box">
                         <span class="time-field-label">Fin</span>
-                        <input type="time" value="${s.end}" onchange="app.updateDayTime(${idx}, 'end', this.value)">
+                        <input type="time" value="${s.end}" oninput="app.updateDayTime(${idx}, 'end', this.value)" onchange="app.updateDayTime(${idx}, 'end', this.value)">
                     </div>
                 </div>
                 ` : `

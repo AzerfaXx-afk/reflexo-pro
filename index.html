@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS App -->
-    <link rel="stylesheet" href="css/app.css?v=9">
+    <link rel="stylesheet" href="css/app.css?v=10">
 </head>
 <body>
 
@@ -67,15 +67,9 @@
 
                     <!-- Bouton Awwwards : Installer l'App -->
                     <div class="sidebar-install-box">
-                        <button type="button" class="btn-sidebar-install" id="btnInstallApp" onclick="app.promptInstallApp()" title="Installer l'application sur cet appareil">
-                            <div class="install-icon-wrap">
-                                <i class="fa-solid fa-cloud-arrow-down"></i>
-                            </div>
-                            <div class="install-info">
-                                <span class="install-title">Installer l'App</span>
-                                <span class="install-sub">Accès direct 1 clic</span>
-                            </div>
-                            <span class="install-badge">PWA</span>
+                        <button type="button" class="btn-sidebar-install" id="btnInstallApp" onclick="app.promptInstallApp()" title="Installer l'application">
+                            <i class="fa-solid fa-arrow-down-to-bracket"></i>
+                            <span>Installer l'App</span>
                         </button>
                     </div>
                 </nav>
@@ -778,7 +772,7 @@
             <div class="modal-header">
                 <div>
                     <h3 id="historyClientName" style="font-size: 1.3rem; margin: 0; color: var(--text-heading);">Historique du Client</h3>
-                    <div id="historyClientSubtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Coordonnées & liste des rendez-vous</div>
+                    <div id="historyClientSubtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Coordonnées & prochains rendez-vous</div>
                 </div>
                 <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -1073,6 +1067,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js?v=5"></script>
     <script src="js/calendar.js?v=4"></script>
-    <script src="js/app.js?v=18"></script>
+    <script src="js/app.js?v=19"></script>
 </body>
 </html>
