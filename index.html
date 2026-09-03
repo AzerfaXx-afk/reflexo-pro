@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS App -->
-    <link rel="stylesheet" href="css/app.css?v=7">
+    <link rel="stylesheet" href="css/app.css?v=9">
 </head>
 <body>
 
@@ -64,6 +64,20 @@
                         <i class="fa-regular fa-clock"></i>
                         <span>Horaires</span>
                     </button>
+
+                    <!-- Bouton Awwwards : Installer l'App -->
+                    <div class="sidebar-install-box">
+                        <button type="button" class="btn-sidebar-install" id="btnInstallApp" onclick="app.promptInstallApp()" title="Installer l'application sur cet appareil">
+                            <div class="install-icon-wrap">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                            </div>
+                            <div class="install-info">
+                                <span class="install-title">Installer l'App</span>
+                                <span class="install-sub">Accès direct 1 clic</span>
+                            </div>
+                            <span class="install-badge">PWA</span>
+                        </button>
+                    </div>
                 </nav>
             </div>
 
@@ -105,14 +119,34 @@
              ========================================================================= -->
         <main class="main-area">
 
-            <!-- Pull to Refresh Indicator (Awwwards Fluid Dynamic Capsule) -->
-            <div class="pull-to-refresh" id="pullToRefresh">
-                <div class="ptr-content">
-                    <div class="ptr-icon-wrapper">
-                        <i class="fa-solid fa-arrow-down ptr-icon" id="ptrIcon"></i>
-                        <div class="ptr-spinner" id="ptrSpinner" style="display: none;"></div>
+            <!-- Mobile App Header (Praticien & Statut en direct sur Smartphone) -->
+            <header class="mobile-app-header" id="mobileAppHeader">
+                <div class="mobile-header-left" onclick="app.handleProfileClick()">
+                    <div class="mobile-header-avatar">
+                        <img id="mobileHeaderAvatarImg" src="" alt="Avatar" style="display: none;">
+                        <span id="mobileHeaderAvatarInitials">S</span>
                     </div>
-                    <span class="ptr-label" id="ptrLabel">Glissez pour actualiser</span>
+                    <div class="mobile-header-info">
+                        <span class="mobile-header-title">Cabinet</span>
+                        <span class="mobile-header-name" id="mobileHeaderPractitionerName">Stéphanie</span>
+                    </div>
+                </div>
+                <div class="mobile-header-right">
+                    <div class="live-status-pill open" id="mobileLiveStatusBadge" onclick="app.navigateTo('settings')">
+                        <span class="live-status-dot"></span>
+                        <span class="live-status-label" id="mobileLiveStatusLabel">Ouvert</span>
+                    </div>
+                    <button type="button" class="mobile-header-profile-btn" onclick="app.handleProfileClick()" title="Mon profil">
+                        <i class="fa-solid fa-user-gear"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Pull to Refresh Indicator (Discret Minimal Circle Arrow) -->
+            <div class="pull-to-refresh" id="pullToRefresh" aria-hidden="true">
+                <div class="ptr-circle">
+                    <i class="fa-solid fa-arrow-down ptr-arrow" id="ptrIcon"></i>
+                    <div class="ptr-spinner" id="ptrSpinner" style="display: none;"></div>
                 </div>
             </div>
 
@@ -244,16 +278,37 @@
                     
                     <div class="catalogue-header-actions">
                         <div>
-                            <h2>Catalogue de soins</h2>
+                            <h2>Catalogue & Offres</h2>
                             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
-                                Gérez vos prestations, durées, tarifs et photos.
+                                Vos 15 soins authentiques, packs cadeaux et forfaits sur-mesure.
                             </p>
                         </div>
-                        <div id="catalogueHeaderBtnWrap" style="display: none;">
+                        <div id="catalogueHeaderBtnWrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn btn-outline btn-sm" onclick="window.open('../bons-cadeaux.html', '_blank')">
+                                <i class="fa-solid fa-gift"></i> Page Cadeaux Publique
+                            </button>
                             <button class="btn btn-primary btn-sm" id="btnOpenNewService" onclick="app.openNewServiceModal()">
                                 <i class="fa-solid fa-plus"></i> Ajouter une prestation
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Tabs Catalogue : Prestations | Packs & Forfaits | Cartes Cadeaux -->
+                    <div class="catalogue-nav-tabs" id="catalogueNavTabs">
+                        <button class="cat-tab-btn active" data-tab="services" onclick="app.setCatalogueTab('services')">
+                            <i class="fa-solid fa-spa"></i> Prestations <span class="cat-tab-count" id="countServicesTab">15</span>
+                        </button>
+                        <button class="cat-tab-btn" data-tab="packs" onclick="app.setCatalogueTab('packs')">
+                            <i class="fa-solid fa-box-open"></i> Packs Cadeaux & Forfaits <span class="cat-tab-count" id="countPacksTab">7</span>
+                        </button>
+                        <button class="cat-tab-btn" data-tab="vouchers" onclick="app.setCatalogueTab('vouchers')">
+                            <i class="fa-solid fa-gift"></i> Cartes Cadeaux
+                        </button>
+                    </div>
+
+                    <!-- Category Pills for Prestations -->
+                    <div class="catalogue-filter-chips" id="catalogueCategoryChips">
+                        <!-- Populated dynamically -->
                     </div>
 
                     <div class="services-cards-grid" id="servicesCardsGrid">
@@ -885,6 +940,61 @@
         </div>
     </div>
 
+    <!-- Modal d'Installation PWA (Guide Awwwards) -->
+    <div class="modal-backdrop" id="modalInstallGuide">
+        <div class="modal-card" style="max-width: 480px; text-align: center; padding: 32px 24px; border-radius: 24px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25); position: relative;">
+            <button class="modal-close-btn" onclick="app.closeInstallModal()" title="Fermer"><i class="fa-solid fa-xmark"></i></button>
+            <div class="install-modal-header">
+                <div class="install-modal-icon">
+                    <img src="assets/icon-pro-512.png" alt="Logo Reflexo Pro" style="width: 54px; height: 54px; border-radius: 14px; box-shadow: 0 8px 20px rgba(95, 158, 160, 0.3);">
+                </div>
+                <h3 style="font-family: var(--font-serif); font-size: 1.4rem; color: var(--text-heading); margin-top: 14px; margin-bottom: 6px;">Installer Reflexo Pro</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                    Utilisez l'application en plein écran, sans barre de navigation, avec un accès direct depuis votre écran d'accueil.
+                </p>
+            </div>
+
+            <!-- Guide personnalisé selon l'appareil -->
+            <div class="install-instructions-card">
+                <div class="install-step-row">
+                    <div class="install-step-badge">1</div>
+                    <div class="install-step-content">
+                        <strong>Sur iPhone / iPad (Safari) :</strong>
+                        <span>Appuyez sur le bouton <strong>Partager</strong> <i class="fa-solid fa-arrow-up-from-bracket" style="color: var(--primary);"></i> en bas de votre écran.</span>
+                    </div>
+                </div>
+                <div class="install-step-row">
+                    <div class="install-step-badge">2</div>
+                    <div class="install-step-content">
+                        <span>Faites défiler vers le bas puis sélectionnez <strong>« Sur l'écran d'accueil »</strong> <i class="fa-regular fa-square-plus" style="color: var(--primary);"></i>.</span>
+                    </div>
+                </div>
+                <div class="install-step-row">
+                    <div class="install-step-badge">3</div>
+                    <div class="install-step-content">
+                        <span>Appuyez sur <strong>Ajouter</strong> en haut à droite. L'icône Reflexo Pro apparaîtra sur votre écran !</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="install-instructions-card" style="margin-top: 12px; background: rgba(95, 158, 160, 0.05); border-color: rgba(95, 158, 160, 0.2);">
+                <div style="font-size: 0.82rem; color: var(--text-heading); text-align: left;">
+                    <i class="fa-brands fa-android" style="color: #10B981; margin-right: 6px;"></i> <strong>Sur Android / Chrome PC :</strong>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                        Cliquez sur le bouton ci-dessous ou ouvrez le menu <strong>⋮</strong> puis cliquez sur <strong>« Installer l'application »</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div style="margin-top: 24px; display: flex; gap: 10px;">
+                <button type="button" class="btn btn-primary btn-block" id="btnTriggerNativeInstall" onclick="app.triggerNativeInstall()" style="padding: 13px; font-weight: 600; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                    <span>Lancer l'installation</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- ========================================================================= 
          AUTHENTICATION OVERLAY (ESPACE PRIVÉ SÉCURISÉ)
@@ -963,6 +1073,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js?v=5"></script>
     <script src="js/calendar.js?v=4"></script>
-    <script src="js/app.js?v=16"></script>
+    <script src="js/app.js?v=18"></script>
 </body>
 </html>

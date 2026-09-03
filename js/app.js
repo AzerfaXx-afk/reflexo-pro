@@ -172,6 +172,95 @@ class StephanieProApp {
 
         this.calendar = null;
 
+        this.catalogueTab = 'services';
+        this.catalogueCategory = 'all';
+        this.giftPacks = [
+            {
+                id: 'pack_1',
+                title: 'Forfait Massage Suédois (5+1)',
+                subtitle: '5 séances de 60 min achetées + 1 offerte',
+                price: 375,
+                realValue: 450,
+                sessions: 6,
+                duration: '6x 60 min',
+                image: '../assets/img/mass1.webp',
+                badge: 'Offre Star 5+1',
+                description: 'Idéal pour installer une routine de relaxation profonde et libérer les tensions musculaires chroniques durablement.'
+            },
+            {
+                id: 'pack_2',
+                title: 'Massage Duo Saint-Valentin',
+                subtitle: '2 massages relaxants de 60 min pour les amoureux',
+                price: 150,
+                realValue: 160,
+                sessions: 2,
+                duration: '2x 60 min',
+                image: '../assets/img/mass2.webp',
+                badge: 'Spécial Amoureux',
+                description: 'Partagez un moment d\'évasion et de sérénité à deux avec deux séances complètes de détente.'
+            },
+            {
+                id: 'pack_3',
+                title: 'Évasion Amoureuse Saint-Valentin',
+                subtitle: '2 massages d\'exception de 1h30',
+                price: 180,
+                realValue: 220,
+                sessions: 2,
+                duration: '2x 90 min',
+                image: '../assets/img/mass3.webp',
+                badge: 'Prestige Duo',
+                description: 'L\'expérience ultime en duo : 1h30 de massage enveloppant personnalisé pour lâcher prise ensemble.'
+            },
+            {
+                id: 'pack_4',
+                title: 'Pack Bien-Être Noël (3x 1h30)',
+                subtitle: '3 séances de prestige de 1h30',
+                price: 250,
+                realValue: 330,
+                sessions: 3,
+                duration: '3x 90 min',
+                image: '../assets/img/mass4.webp',
+                badge: 'Économie 80 €',
+                description: 'Trois parenthèses de pure déconnexion pour un bien-être corporel et émotionnel total.'
+            },
+            {
+                id: 'pack_5',
+                title: 'Pack Bien-Être Noël (3x 1h)',
+                subtitle: '3 massages de 60 min au choix',
+                price: 200,
+                realValue: 240,
+                sessions: 3,
+                duration: '3x 60 min',
+                image: '../assets/img/mass5.webp',
+                badge: 'Économie 40 €',
+                description: 'Trois rendez-vous pour soulager le stress, dénouer les muscles et faire le plein d\'énergie.'
+            },
+            {
+                id: 'pack_6',
+                title: 'Pack Cadeau Bien-Être (1x 1h30)',
+                subtitle: '1 séance d\'exception de 1h30',
+                price: 90,
+                realValue: 110,
+                sessions: 1,
+                duration: '90 min',
+                image: '../assets/img/mass6.webp',
+                badge: 'Idée Cadeau',
+                description: 'Le format idéal pour faire découvrir l\'art du massage personnalisé à un proche.'
+            },
+            {
+                id: 'pack_7',
+                title: 'Pack Cadeau Bien-Être (1x 1h)',
+                subtitle: '1 massage relaxant de 60 min',
+                price: 80,
+                realValue: 80,
+                sessions: 1,
+                duration: '60 min',
+                image: '../assets/img/mass7.webp',
+                badge: 'L\'Essentiel',
+                description: 'Une heure de détente ciblée pour retrouver calme, fluidité et harmonie.'
+            }
+        ];
+
         this.init();
     }
 
@@ -229,6 +318,7 @@ class StephanieProApp {
         this.updateCabinetLiveStatus();
         this.setupAuth();
         this.initPullToRefresh();
+        this.setupPwaInstall();
 
         // Rafraîchir le statut en direct toutes les 30 secondes
         setInterval(() => this.updateCabinetLiveStatus(), 30000);
@@ -246,6 +336,62 @@ class StephanieProApp {
                 navigator.serviceWorker.register('./sw.js?v=3').catch(err => console.log('SW fail', err));
             }
         }
+    }
+
+    setupPwaInstall() {
+        this.deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredInstallPrompt = e;
+            const btn = document.getElementById('btnInstallApp');
+            if (btn) btn.classList.add('has-native-prompt');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            this.deferredInstallPrompt = null;
+            this.showToast('Application Reflexo Pro installée avec succès !', 'success');
+            const box = document.querySelector('.sidebar-install-box');
+            if (box) box.style.display = 'none';
+        });
+    }
+
+    promptInstallApp() {
+        if (this.deferredInstallPrompt) {
+            this.triggerNativeInstall();
+        } else {
+            const modal = document.getElementById('modalInstallGuide');
+            if (modal) {
+                modal.classList.add('active');
+                const nativeBtn = document.getElementById('btnTriggerNativeInstall');
+                if (nativeBtn && !this.deferredInstallPrompt) {
+                    nativeBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>J\'ai compris</span>';
+                    nativeBtn.onclick = () => this.closeInstallModal();
+                }
+            }
+        }
+    }
+
+    async triggerNativeInstall() {
+        if (!this.deferredInstallPrompt) {
+            this.closeInstallModal();
+            return;
+        }
+        try {
+            this.deferredInstallPrompt.prompt();
+            const { outcome } = await this.deferredInstallPrompt.userChoice;
+            if (outcome === 'accepted') {
+                this.showToast('Installation en cours...', 'success');
+                this.deferredInstallPrompt = null;
+                this.closeInstallModal();
+            }
+        } catch (err) {
+            console.warn('Install prompt error:', err);
+        }
+    }
+
+    closeInstallModal() {
+        const modal = document.getElementById('modalInstallGuide');
+        if (modal) modal.classList.remove('active');
     }
 
     openAuthModal(preferredMode = 'register') {
@@ -765,6 +911,13 @@ class StephanieProApp {
             label.textContent = statusText;
             detail.textContent = detailText;
         }
+
+        const mobileBadge = document.getElementById('mobileLiveStatusBadge');
+        const mobileLabel = document.getElementById('mobileLiveStatusLabel');
+        if (mobileBadge && mobileLabel) {
+            mobileBadge.className = isOpen ? 'live-status-pill open' : 'live-status-pill closed';
+            mobileLabel.textContent = isOpen ? 'Ouvert' : 'Fermé';
+        }
     }
 
     /* ========================================================================= 
@@ -1031,64 +1184,188 @@ class StephanieProApp {
     /* ========================================================================= 
        RENDU DU CATALOGUE (PRESTATIONS)
        ========================================================================= */
+    setCatalogueTab(tab) {
+        this.catalogueTab = tab;
+        document.querySelectorAll('.cat-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tab);
+        });
+        this.renderCatalogue();
+    }
+
+    setCatalogueCategory(cat) {
+        this.catalogueCategory = cat;
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.classList.toggle('active', chip.dataset.cat === cat);
+        });
+        this.renderCatalogue();
+    }
+
+    /* ========================================================================= 
+       RENDU DU CATALOGUE (PRESTATIONS, PACKS ET CARTES CADEAUX)
+       ========================================================================= */
     renderCatalogue() {
         const container = document.getElementById('servicesCardsGrid');
-        const headerBtnWrap = document.getElementById('catalogueHeaderBtnWrap');
+        const chipsContainer = document.getElementById('catalogueCategoryChips');
+        const countServicesTab = document.getElementById('countServicesTab');
+        const countPacksTab = document.getElementById('countPacksTab');
         if (!container) return;
 
-        if (this.data.services.length === 0) {
-            if (headerBtnWrap) headerBtnWrap.style.display = 'none';
-            container.innerHTML = `
-                <div class="empty-state" style="grid-column: 1 / -1; padding: 50px 20px;">
-                    <div class="empty-state-icon" style="font-size: 3.2rem;"><i class="fa-solid fa-spa"></i></div>
-                    <h3 style="font-size: 1.35rem; margin-bottom: 8px;">Votre catalogue de soins est vide</h3>
-                    <p style="margin-bottom: 22px; max-width: 440px;">
-                        Ajoutez vos massages, réflexologies et soins avec vos tarifs, photos et descriptions sur-mesure.
-                    </p>
-                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="app.openNewServiceModal()">
+        if (countServicesTab) countServicesTab.textContent = this.data.services.length;
+        if (countPacksTab) countPacksTab.textContent = this.giftPacks.length;
+
+        // VUE TAB 1 : PRESTATIONS
+        if (this.catalogueTab === 'services') {
+            if (chipsContainer) {
+                chipsContainer.style.display = 'flex';
+                // Extract categories
+                const categories = ['all'];
+                this.data.services.forEach(s => {
+                    const cat = s.category || 'Soins';
+                    if (!categories.includes(cat)) categories.push(cat);
+                });
+
+                chipsContainer.innerHTML = categories.map(cat => {
+                    const label = cat === 'all' ? `Tous (${this.data.services.length})` : cat;
+                    const isActive = (this.catalogueCategory || 'all') === cat;
+                    return `<button class="filter-chip ${isActive ? 'active' : ''}" data-cat="${cat}" onclick="app.setCatalogueCategory('${cat}')">${label}</button>`;
+                }).join('');
+            }
+
+            let filtered = this.data.services;
+            if (this.catalogueCategory && this.catalogueCategory !== 'all') {
+                filtered = this.data.services.filter(s => (s.category || 'Soins') === this.catalogueCategory);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1; padding: 50px 20px;">
+                        <div class="empty-state-icon" style="font-size: 3rem;"><i class="fa-solid fa-spa"></i></div>
+                        <h3>Aucune prestation dans cette catégorie</h3>
+                        <p style="margin-bottom: 20px;">Ajoutez un nouveau soin ou choisissez une autre catégorie.</p>
+                        <button class="btn btn-primary btn-sm" onclick="app.openNewServiceModal()">
                             <i class="fa-solid fa-plus"></i> Ajouter une prestation
                         </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(s => `
+                <div class="service-card">
+                    <div class="service-img-wrapper">
+                        <img src="${s.image || '../assets/img/mass1.webp'}" alt="${s.name}" class="service-img" onerror="this.src='../assets/img/mass1.webp'">
+                        <span class="service-cat-badge">${s.category || 'Soin'}</span>
+                        <span class="service-price-pill">${s.price} €</span>
+                    </div>
+                    <div class="service-card-body">
+                        <div>
+                            <h4 class="service-title">${s.name}</h4>
+                            <div class="service-duration-tag">
+                                <i class="fa-regular fa-clock"></i> ${s.duration} minutes
+                            </div>
+                            <p class="service-description">${s.description || 'Soin bien-être relaxant et thérapeutique.'}</p>
+                        </div>
+                        <div class="service-card-footer">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${s.colorBorder || '#5F9EA0'};"></span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Agenda</span>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="btn btn-outline btn-sm" onclick="app.editService('${s.id}')" title="Modifier">
+                                    <i class="fa-regular fa-pen-to-square"></i> Modifier
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="app.deleteService('${s.id}')" title="Supprimer">
+                                    <i class="fa-regular fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            return;
+        }
+
+        // VUE TAB 2 : PACKS CADEAUX & FORFAITS
+        if (this.catalogueTab === 'packs') {
+            if (chipsContainer) chipsContainer.style.display = 'none';
+
+            container.innerHTML = this.giftPacks.map(p => `
+                <div class="service-card" style="border: 1.5px solid rgba(95, 158, 160, 0.3); box-shadow: 0 8px 24px rgba(95, 158, 160, 0.1);">
+                    <div class="service-img-wrapper">
+                        <img src="${p.image}" alt="${p.title}" class="service-img" onerror="this.src='../assets/img/mass1.webp'">
+                        <span class="service-cat-badge" style="background: rgba(23, 37, 42, 0.9); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <i class="fa-solid fa-gift"></i> ${p.badge}
+                        </span>
+                        <span class="service-price-pill" style="background: linear-gradient(135deg, #059669, #10B981);">${p.price} €</span>
+                    </div>
+                    <div class="service-card-body">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                                <h4 class="service-title" style="margin: 0;">${p.title}</h4>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--primary); font-weight: 600; margin-bottom: 6px;">
+                                ${p.subtitle}
+                            </div>
+                            <div class="service-duration-tag" style="background: rgba(16, 185, 129, 0.1); color: #059669;">
+                                <i class="fa-solid fa-layer-group"></i> ${p.duration} • Valeur ${p.realValue} €
+                            </div>
+                            <p class="service-description" style="margin-top: 8px;">${p.description}</p>
+                        </div>
+                        <div class="service-card-footer" style="padding-top: 14px; border-top: 1px dashed var(--border-color);">
+                            <span style="font-size: 0.78rem; color: #059669; font-weight: 600;">
+                                <i class="fa-solid fa-tag"></i> Économisez ${p.realValue - p.price} €
+                            </span>
+                            <a href="../bons-cadeaux.html?pack=${p.id}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                                <i class="fa-solid fa-gift"></i> Offrir ce pack
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            return;
+        }
+
+        // VUE TAB 3 : CARTES CADEAUX (MONTANT LIBRE & PERSONNALISÉ)
+        if (this.catalogueTab === 'vouchers') {
+            if (chipsContainer) chipsContainer.style.display = 'none';
+
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 24px;">
+                    <div style="background: linear-gradient(135deg, #17252A 0%, #203A43 100%); border-radius: 20px; padding: 28px 24px; color: #ffffff; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <span style="display: inline-block; padding: 4px 10px; border-radius: 9999px; background: rgba(56, 189, 248, 0.2); color: #38BDF8; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+                                    Boutique Cadeaux en ligne
+                                </span>
+                                <h3 style="font-size: 1.4rem; font-weight: 700; margin: 0; color: #ffffff;">Offrez une parenthèse de sérénité</h3>
+                                <p style="color: #94A3B8; font-size: 0.88rem; margin: 6px 0 0 0; max-width: 540px;">
+                                    Vos clients peuvent commander des bons cadeaux à montant libre (50€, 80€, 100€...) ou offrir un soin précis avec message personnalisé et téléchargement immédiat.
+                                </p>
+                            </div>
+                            <a href="../bons-cadeaux.html" target="_blank" class="btn btn-primary" style="background: #38BDF8; color: #0F172A; font-weight: 700; text-decoration: none;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ouvrir la boutique cadeaux
+                            </a>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 10px;">
+                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 16px;">
+                                <div style="font-size: 0.75rem; color: #94A3B8;">Montants suggérés</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 4px;">50€ • 80€ • 110€</div>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 16px;">
+                                <div style="font-size: 0.75rem; color: #94A3B8;">Validité des bons</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 4px;">1 an (12 mois)</div>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 16px;">
+                                <div style="font-size: 0.75rem; color: #94A3B8;">Délivrance</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #34D399; margin-top: 4px;">Immédiate par email</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
             return;
         }
-
-        if (headerBtnWrap) headerBtnWrap.style.display = 'block';
-
-        container.innerHTML = this.data.services.map(s => `
-            <div class="service-card">
-                <div class="service-img-wrapper">
-                    <img src="${s.image || '../assets/img/mass1.webp'}" alt="${s.name}" class="service-img" onerror="this.src='../assets/img/mass1.webp'">
-                    <span class="service-cat-badge">${s.category || 'Soin'}</span>
-                    <span class="service-price-pill">${s.price} €</span>
-                </div>
-                <div class="service-card-body">
-                    <div>
-                        <h4 class="service-title">${s.name}</h4>
-                        <div class="service-duration-tag">
-                            <i class="fa-regular fa-clock"></i> ${s.duration} minutes
-                        </div>
-                        <p class="service-description">${s.description || 'Soin bien-être relaxant et thérapeutique.'}</p>
-                    </div>
-                    <div class="service-card-footer">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${s.colorBorder || '#5F9EA0'};"></span>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">Agenda</span>
-                        </div>
-                        <div style="display: flex; gap: 6px;">
-                            <button class="btn btn-outline btn-sm" onclick="app.editService('${s.id}')" title="Modifier">
-                                <i class="fa-regular fa-pen-to-square"></i> Modifier
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="app.deleteService('${s.id}')" title="Supprimer">
-                                <i class="fa-regular fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
     }
 
     /* ========================================================================= 
@@ -2425,6 +2702,25 @@ class StephanieProApp {
             }
         }
 
+        // Mobile App Header sync
+        const mobileNameEl = document.getElementById('mobileHeaderPractitionerName');
+        const mobileImgEl = document.getElementById('mobileHeaderAvatarImg');
+        const mobileInitialsEl = document.getElementById('mobileHeaderAvatarInitials');
+        if (mobileNameEl) {
+            mobileNameEl.textContent = formattedName;
+        }
+        if (mobileImgEl && mobileInitialsEl) {
+            if (photo) {
+                mobileImgEl.src = photo;
+                mobileImgEl.style.display = 'block';
+                mobileInitialsEl.style.display = 'none';
+            } else {
+                mobileImgEl.style.display = 'none';
+                mobileInitialsEl.style.display = 'inline';
+                mobileInitialsEl.textContent = formattedName.charAt(0).toUpperCase();
+            }
+        }
+
         // Modal Profile synchronization
         const modalImg = document.getElementById('modalProfileImg');
         const modalPlaceholder = document.getElementById('modalProfilePlaceholder');
@@ -2719,32 +3015,34 @@ class StephanieProApp {
         const ptr = document.getElementById('pullToRefresh');
         const ptrIcon = document.getElementById('ptrIcon');
         const ptrSpinner = document.getElementById('ptrSpinner');
-        const ptrLabel = document.getElementById('ptrLabel');
         const scrollContainer = document.querySelector('.content-body');
 
-        if (!ptr || !scrollContainer) return;
+        if (!ptr) return;
 
         let startY = 0;
         let startX = 0;
         let isPulling = false;
         let isRefreshing = false;
-        const THRESHOLD = 58;
+        const THRESHOLD = 52;
 
         const isAtTop = () => {
-            return scrollContainer.scrollTop <= 2 && window.scrollY <= 2 && document.documentElement.scrollTop <= 2;
+            const bodyScroll = scrollContainer ? scrollContainer.scrollTop : 0;
+            return bodyScroll <= 3 && window.scrollY <= 3 && document.documentElement.scrollTop <= 3;
         };
 
         const resetPtr = () => {
             ptr.classList.remove('visible', 'release', 'refreshing');
-            ptr.style.transform = 'translate(-50%, -90px)';
+            ptr.style.transform = 'translate(-50%, -70px)';
             ptr.style.opacity = '0';
         };
 
         const onTouchStart = (e) => {
             if (isRefreshing) return;
+            const touch = e.touches[0];
+            // Only allow pull from the top part of the screen (< 320px)
+            if (touch.clientY > 320) return;
             if (!isAtTop()) return;
             
-            const touch = e.touches[0];
             startY = touch.clientY;
             startX = touch.clientX;
             isPulling = true;
@@ -2770,14 +3068,14 @@ class StephanieProApp {
                 return;
             }
 
-            const distance = Math.min(85, Math.pow(deltaY, 0.82));
+            const distance = Math.min(68, Math.pow(deltaY, 0.78));
 
-            if (distance > 6) {
+            if (distance > 5) {
                 ptr.classList.add('visible');
-                ptr.style.transform = `translate(-50%, ${distance - 75}px)`;
-                ptr.style.opacity = Math.min(1, distance / 35);
+                ptr.style.transform = `translate(-50%, ${distance - 58}px)`;
+                ptr.style.opacity = Math.min(1, distance / 28);
 
-                const progress = Math.min(1, (distance - 6) / (THRESHOLD - 6));
+                const progress = Math.min(1, (distance - 5) / (THRESHOLD - 5));
                 if (ptrIcon && !ptr.classList.contains('release')) {
                     ptrIcon.style.transform = `rotate(${progress * 180}deg)`;
                 }
@@ -2785,19 +3083,20 @@ class StephanieProApp {
                 if (distance >= THRESHOLD) {
                     if (!ptr.classList.contains('release')) {
                         ptr.classList.add('release');
-                        if (ptrLabel) ptrLabel.textContent = 'Relâchez pour actualiser';
+                        if (ptrIcon) {
+                            ptrIcon.style.transform = 'rotate(180deg)';
+                        }
                         if (navigator.vibrate) {
-                            try { navigator.vibrate(12); } catch (err) {}
+                            try { navigator.vibrate(10); } catch (err) {}
                         }
                     }
                 } else {
                     if (ptr.classList.contains('release')) {
                         ptr.classList.remove('release');
-                        if (ptrLabel) ptrLabel.textContent = 'Glissez pour actualiser';
                     }
                 }
 
-                if (e.cancelable && distance > 14) {
+                if (e.cancelable && distance > 10) {
                     e.preventDefault();
                 }
             }
@@ -2811,40 +3110,37 @@ class StephanieProApp {
                 isRefreshing = true;
                 ptr.classList.remove('release');
                 ptr.classList.add('refreshing');
-                ptr.style.transform = 'translate(-50%, 0px)';
+                ptr.style.transform = 'translate(-50%, 6px)';
                 ptr.style.opacity = '1';
 
                 if (ptrIcon) ptrIcon.style.display = 'none';
                 if (ptrSpinner) ptrSpinner.style.display = 'block';
-                if (ptrLabel) ptrLabel.textContent = 'Actualisation en direct...';
 
                 try {
                     await this.syncWithSupabase();
                     
                     if (navigator.vibrate) {
-                        try { navigator.vibrate([10, 30, 10]); } catch (err) {}
+                        try { navigator.vibrate([8, 20]); } catch (err) {}
                     }
 
                     if (ptrSpinner) ptrSpinner.style.display = 'none';
                     if (ptrIcon) {
-                        ptrIcon.style.display = 'inline-block';
-                        ptrIcon.className = 'fa-solid fa-check ptr-icon';
+                        ptrIcon.style.display = 'flex';
+                        ptrIcon.className = 'fa-solid fa-check ptr-arrow';
                         ptrIcon.style.color = '#34D399';
                         ptrIcon.style.transform = 'none';
                     }
-                    if (ptrLabel) ptrLabel.textContent = 'Cabinet à jour !';
 
                     setTimeout(() => {
                         resetPtr();
                         setTimeout(() => {
                             isRefreshing = false;
                             if (ptrIcon) {
-                                ptrIcon.className = 'fa-solid fa-arrow-down ptr-icon';
+                                ptrIcon.className = 'fa-solid fa-arrow-down ptr-arrow';
                                 ptrIcon.style.color = '';
                             }
-                            if (ptrLabel) ptrLabel.textContent = 'Glissez pour actualiser';
-                        }, 300);
-                    }, 650);
+                        }, 260);
+                    }, 480);
 
                 } catch (err) {
                     console.error('Erreur pull to refresh:', err);
@@ -2857,10 +3153,11 @@ class StephanieProApp {
             }
         };
 
-        scrollContainer.addEventListener('touchstart', onTouchStart, { passive: true });
-        scrollContainer.addEventListener('touchmove', onTouchMove, { passive: false });
-        scrollContainer.addEventListener('touchend', onTouchEnd, { passive: true });
-        scrollContainer.addEventListener('touchcancel', onTouchEnd, { passive: true });
+        // Attach to window and scrollContainer for flawless detection on mobile top area
+        window.addEventListener('touchstart', onTouchStart, { passive: true });
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd, { passive: true });
+        window.addEventListener('touchcancel', onTouchEnd, { passive: true });
     }
 
     renderAll() {
