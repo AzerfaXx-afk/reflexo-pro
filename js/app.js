@@ -159,11 +159,184 @@ const PRESET_COLORS = [
     { bg: '#EFEBE9', border: '#8D6E63', text: '#3E2723', label: 'Sable Chaud' }
 ];
 
+// Les 15 soins authentiques de Stéphanie Bouteloup (exactement Cfixé Screenshots 1 & 3)
+const AUTHENTIC_SERVICES = [
+    // 12 Massages
+    {
+        id: 'srv_myofacial',
+        name: 'Massage myofacial',
+        category: 'Massages',
+        duration: 45,
+        price: 80,
+        colorBg: '#FCE4EC',
+        colorBorder: '#E91E63', // Rose / Pink
+        colorText: '#880E4F',
+        description: 'Technique manuelle brevetée pour la correction des changements liés à l’âge (visage, cou, décolleté).'
+    },
+    {
+        id: 'srv_chineitsang',
+        name: 'Chi Nei Tsang',
+        category: 'Massages',
+        duration: 60,
+        price: 65,
+        colorBg: '#EDE7F6',
+        colorBorder: '#9C27B0', // Violet / Purple
+        colorText: '#311B92',
+        description: 'Massage taoïste du ventre pour libérer les émotions et harmoniser les organes vitaux.'
+    },
+    {
+        id: 'srv_suedois_1h',
+        name: 'Massage suédois 1h',
+        category: 'Massages',
+        duration: 60,
+        price: 80,
+        colorBg: '#E0F7FA',
+        colorBorder: '#00BCD4', // Cyan
+        colorText: '#006064',
+        description: 'Séance de 60 min : mouvements enveloppants, travail des tensions musculaires et détoxification.'
+    },
+    {
+        id: 'srv_suedois_1h30',
+        name: 'Massage suédois 1h30',
+        category: 'Massages',
+        duration: 90,
+        price: 100,
+        colorBg: '#E8F5E9',
+        colorBorder: '#4CAF50', // Vert
+        colorText: '#1B5E20',
+        description: 'Séance de 90 min : relaxation encore plus profonde du corps et de l\'esprit avec étirements doux.'
+    },
+    {
+        id: 'srv_comb_1h',
+        name: 'Massage combiné : réflexologie et suédois 1h',
+        category: 'Massages',
+        duration: 60,
+        price: 85,
+        colorBg: '#ECEFF1',
+        colorBorder: '#607D8B', // Ardoise / Slate
+        colorText: '#263238',
+        description: 'Soin signature associant la puissance de la réflexologie plantaire à la détente enveloppante du massage suédois.'
+    },
+    {
+        id: 'srv_comb_1h30',
+        name: 'Massage combiné : réflexologie et suédois 1h30',
+        category: 'Massages',
+        duration: 90,
+        price: 100,
+        colorBg: '#EDE7F6',
+        colorBorder: '#673AB7', // Violet intense
+        colorText: '#311B92',
+        description: 'Grand soin combiné 1h30 : réflexologie ciblée et massage corporel suédois complet.'
+    },
+    {
+        id: 'srv_evasion',
+        name: 'Evasion amoureuse',
+        category: 'Massages',
+        duration: 90,
+        price: 200,
+        colorBg: '#F1F8E9',
+        colorBorder: '#8BC34A', // Olive clair
+        colorText: '#33691E',
+        description: 'Massage relaxant d\'exception en duo de 1h30 pour lâcher prise ensemble.'
+    },
+    {
+        id: 'srv_kobido',
+        name: 'Massage Kobido',
+        category: 'Massages',
+        duration: 60,
+        price: 80,
+        colorBg: '#FCE4EC',
+        colorBorder: '#F06292', // Rose doux
+        colorText: '#880E4F',
+        description: 'L’art ancestral japonais du lifting naturel du visage et de stimulation des méridiens.'
+    },
+    {
+        id: 'srv_kobido_visage_decollete_crane',
+        name: 'Massage Kobido -Visage décolleté et Crâne',
+        category: 'Massages',
+        duration: 90,
+        price: 100,
+        colorBg: '#E0F2F1',
+        colorBorder: '#26A69A', // Menthe / Teal
+        colorText: '#004D40',
+        description: 'Soin complet associant le Kobido traditionnel à des manœuvres ciblées du décolleté et du crâne.'
+    },
+    {
+        id: 'srv_forfait_massages_60',
+        name: 'Forfait Massages : 5 séances 60 min + 1 Offerte',
+        category: 'Massages',
+        duration: 60,
+        price: 400,
+        colorBg: '#FFF8E1',
+        colorBorder: '#FFB300', // Or / Ambre
+        colorText: '#B57900',
+        description: '5 massages suédois d’une heure et pour prolonger l’expérience… le 6ᵉ massage vous est offert.'
+    },
+    {
+        id: 'srv_duo_valentin',
+        name: 'Offre de massage duo spécial Saint Valentin',
+        category: 'Massages',
+        duration: 60,
+        price: 160,
+        colorBg: '#FFEBEE',
+        colorBorder: '#E53935', // Rouge
+        colorText: '#B71C1C',
+        description: 'Offre duo spéciale pour partager un instant de complicité et de profonde relaxation.'
+    },
+    {
+        id: 'srv_forfait_massages_90',
+        name: 'Forfait massages : 5 séances 90 minutes +1 offerte',
+        category: 'Massages',
+        duration: 90,
+        price: 500,
+        colorBg: '#E0F2F1',
+        colorBorder: '#00897B', // Sarcelle profond
+        colorText: '#004D40',
+        description: '5 séances prestige de 90 minutes + 1 offerte pour un bien-être durable.'
+    },
+
+    // 3 Réflexologies
+    {
+        id: 'srv_reflexo_plantaire',
+        name: 'Réflexologie plantaire',
+        category: 'Réflexologie',
+        duration: 60,
+        price: 65,
+        colorBg: '#E8F5E9',
+        colorBorder: '#2E7D32', // Émeraude / Vert forêt
+        colorText: '#1B5E20',
+        description: 'Stimulation des zones réflexes des pieds pour rétablir l\'équilibre et soulager les tensions.'
+    },
+    {
+        id: 'srv_reflexo_palmaire_faciale',
+        name: 'Réflexologie palmaire-faciale',
+        category: 'Réflexologie',
+        duration: 60,
+        price: 65,
+        colorBg: '#E0F2F1',
+        colorBorder: '#009688', // Turquoise
+        colorText: '#004D40',
+        description: 'Détente douce et profonde par stimulation des points réflexes des mains et du visage.'
+    },
+    {
+        id: 'srv_forfait_reflexo',
+        name: 'Forfait Réflexologie : 5 séances 60 min au choix + 1 Offerte',
+        category: 'Réflexologie',
+        duration: 60,
+        price: 330,
+        colorBg: '#FFF8E1',
+        colorBorder: '#FFA000', // Ambre chaud
+        colorText: '#FF6F00',
+        description: '5 séances de réflexologie de 60 minutes + une séance offerte pour un équilibre pérenne.'
+    }
+];
+
 class StephanieProApp {
     constructor() {
         window.app = this;
         this.currentView = 'dashboard';
         this.currentUser = null;
+        this.openAccordionCats = { 'Massages': true, 'Réflexologie': true };
         this.data = this.loadData();
         this.selectedImage = PRESET_IMAGES[0];
         this.selectedColor = PRESET_COLORS[0];
@@ -174,90 +347,68 @@ class StephanieProApp {
 
         this.catalogueTab = 'services';
         this.catalogueCategory = 'all';
+
+        // Les 10 Packs Cadeaux officiels (Screenshot 4)
         this.giftPacks = [
             {
                 id: 'pack_1',
-                title: 'Forfait Massage Suédois (5+1)',
-                subtitle: '5 séances de 60 min achetées + 1 offerte',
+                title: 'Pack cadeau forfait Massage Suédois : 5 séances 60 min +1 offerte',
                 price: 375,
-                realValue: 450,
-                sessions: 6,
-                duration: '6x 60 min',
-                image: '../assets/img/mass1.webp',
-                badge: 'Offre Star 5+1',
-                description: 'Idéal pour installer une routine de relaxation profonde et libérer les tensions musculaires chroniques durablement.'
+                items: ['x6 - Massage suédois 1h']
             },
             {
                 id: 'pack_2',
-                title: 'Massage Duo Saint-Valentin',
-                subtitle: '2 massages relaxants de 60 min pour les amoureux',
+                title: 'Massage Duo Saint Valentin',
                 price: 150,
-                realValue: 160,
-                sessions: 2,
-                duration: '2x 60 min',
-                image: '../assets/img/mass2.webp',
-                badge: 'Spécial Amoureux',
-                description: 'Partagez un moment d\'évasion et de sérénité à deux avec deux séances complètes de détente.'
+                items: ['x1 - Offre de massage duo spécial Saint Valentin']
             },
             {
                 id: 'pack_3',
-                title: 'Évasion Amoureuse Saint-Valentin',
-                subtitle: '2 massages d\'exception de 1h30',
+                title: 'Evasion amoureuse Saint Valentin',
                 price: 180,
-                realValue: 220,
-                sessions: 2,
-                duration: '2x 90 min',
-                image: '../assets/img/mass3.webp',
-                badge: 'Prestige Duo',
-                description: 'L\'expérience ultime en duo : 1h30 de massage enveloppant personnalisé pour lâcher prise ensemble.'
+                items: ['x1 - Evasion amoureuse']
             },
             {
                 id: 'pack_4',
-                title: 'Pack Bien-Être Noël (3x 1h30)',
-                subtitle: '3 séances de prestige de 1h30',
+                title: 'Pack cadeau bien être Noël',
                 price: 250,
-                realValue: 330,
-                sessions: 3,
-                duration: '3x 90 min',
-                image: '../assets/img/mass4.webp',
-                badge: 'Économie 80 €',
-                description: 'Trois parenthèses de pure déconnexion pour un bien-être corporel et émotionnel total.'
+                items: ['x3 - Massage combiné : réflexologie et suédois 1h30']
             },
             {
                 id: 'pack_5',
-                title: 'Pack Bien-Être Noël (3x 1h)',
-                subtitle: '3 massages de 60 min au choix',
+                title: 'Pack cadeau bien être Noël',
                 price: 200,
-                realValue: 240,
-                sessions: 3,
-                duration: '3x 60 min',
-                image: '../assets/img/mass5.webp',
-                badge: 'Économie 40 €',
-                description: 'Trois rendez-vous pour soulager le stress, dénouer les muscles et faire le plein d\'énergie.'
+                items: ['x3 - Massage combiné : réflexologie et suédois 1h']
             },
             {
                 id: 'pack_6',
-                title: 'Pack Cadeau Bien-Être (1x 1h30)',
-                subtitle: '1 séance d\'exception de 1h30',
+                title: 'Pack cadeau bien être Noël',
                 price: 90,
-                realValue: 110,
-                sessions: 1,
-                duration: '90 min',
-                image: '../assets/img/mass6.webp',
-                badge: 'Idée Cadeau',
-                description: 'Le format idéal pour faire découvrir l\'art du massage personnalisé à un proche.'
+                items: ['x1 - Massage combiné : réflexologie et suédois 1h30']
             },
             {
                 id: 'pack_7',
-                title: 'Pack Cadeau Bien-Être (1x 1h)',
-                subtitle: '1 massage relaxant de 60 min',
+                title: 'Pack cadeau bien être Noël',
                 price: 80,
-                realValue: 80,
-                sessions: 1,
-                duration: '60 min',
-                image: '../assets/img/mass7.webp',
-                badge: 'L\'Essentiel',
-                description: 'Une heure de détente ciblée pour retrouver calme, fluidité et harmonie.'
+                items: ['x1 - Massage combiné : réflexologie et suédois 1h']
+            },
+            {
+                id: 'pack_8',
+                title: 'Pack cadeau bien être Noël',
+                price: 100,
+                items: ['x1 - Réflexologie plantaire', 'x1 - Chi Nei Tsang']
+            },
+            {
+                id: 'pack_9',
+                title: 'Pack cadeau bien être Noël',
+                price: 110,
+                items: ['x1 - Massage suédois 1h', 'x1 - Massage myofacial']
+            },
+            {
+                id: 'pack_10',
+                title: 'Pack cadeau forfait Réflexologie : 5 séances 60 min + 1 Offerte',
+                price: 300,
+                items: ['x6 - Réflexologie plantaire']
             }
         ];
 
@@ -280,7 +431,7 @@ class StephanieProApp {
             notifications: [],
             profilePhoto: '',
             practitionerName: '',
-            categories: ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés']
+            categories: ['Massages', 'Réflexologie']
         };
 
         const key = this.getStorageKey();
@@ -293,13 +444,24 @@ class StephanieProApp {
                 if (Array.isArray(data.notifications)) {
                     data.notifications = data.notifications.filter(n => !n.text?.includes('2026-09-14'));
                 }
-                if (!data.categories || data.categories.length === 0) {
-                    data.categories = ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés'];
-                }
             } catch (e) {
                 console.error('Error loading data', e);
             }
         }
+
+        // Toujours initialiser avec les 15 soins authentiques de Stéphanie Bouteloup
+        if (!data.services || data.services.length === 0) {
+            data.services = JSON.parse(JSON.stringify(AUTHENTIC_SERVICES));
+        } else {
+            // S'assurer que les 15 soins authentiques de Stéphanie Bouteloup sont bien présents
+            AUTHENTIC_SERVICES.forEach(authSrv => {
+                const exists = data.services.some(s => s.name.toLowerCase().trim() === authSrv.name.toLowerCase().trim());
+                if (!exists) {
+                    data.services.push({ ...authSrv });
+                }
+            });
+        }
+        data.categories = ['Massages', 'Réflexologie'];
 
         return data;
     }
@@ -1228,8 +1390,38 @@ class StephanieProApp {
         this.renderCatalogue();
     }
 
+    toggleCategoryAccordion(cat) {
+        if (!this.openAccordionCats) {
+            this.openAccordionCats = { 'Massages': true, 'Réflexologie': true };
+        }
+        this.openAccordionCats[cat] = !this.openAccordionCats[cat];
+        this.renderCatalogue();
+    }
+
+    editPack(id) {
+        const pack = this.giftPacks.find(p => p.id === id);
+        if (!pack) return;
+        const newTitle = prompt('Nom du pack cadeau :', pack.title);
+        if (!newTitle) return;
+        const newPrice = prompt('Tarif du pack (€) :', pack.price);
+        if (newPrice) {
+            pack.title = newTitle;
+            pack.price = Number(newPrice) || pack.price;
+            this.renderCatalogue();
+            this.showToast('Pack cadeau modifié avec succès !', 'success');
+        }
+    }
+
+    deletePack(id) {
+        if (confirm('Voulez-vous supprimer ce pack du catalogue ?')) {
+            this.giftPacks = this.giftPacks.filter(p => p.id !== id);
+            this.renderCatalogue();
+            this.showToast('Pack supprimé avec succès', 'info');
+        }
+    }
+
     /* ========================================================================= 
-       RENDU DU CATALOGUE (PRESTATIONS, PACKS ET CARTES CADEAUX)
+       RENDU DU CATALOGUE (ACCORDÉONS CFIXÉ PRO SCREENSHOTS 1, 3 & 4)
        ========================================================================= */
     renderCatalogue() {
         const container = document.getElementById('servicesCardsGrid');
@@ -1241,152 +1433,159 @@ class StephanieProApp {
         if (countServicesTab) countServicesTab.textContent = this.data.services.length;
         if (countPacksTab) countPacksTab.textContent = this.giftPacks.length;
 
-        // VUE TAB 1 : PRESTATIONS
+        if (chipsContainer) chipsContainer.style.display = 'none';
+
+        // VUE TAB 1 : PRESTATIONS (ACCORDÉONS SCREENSHOTS 1 & 3)
         if (this.catalogueTab === 'services') {
-            if (chipsContainer) {
-                chipsContainer.style.display = 'flex';
-                // Extract categories
-                const categories = ['all'];
-                this.data.services.forEach(s => {
-                    const cat = s.category || 'Soins';
-                    if (!categories.includes(cat)) categories.push(cat);
-                });
+            const massages = this.data.services.filter(s => 
+                !((s.category || '').toLowerCase().includes('réflexo') || (s.category || '').toLowerCase().includes('reflexo'))
+            );
+            const reflexo = this.data.services.filter(s => 
+                (s.category || '').toLowerCase().includes('réflexo') || (s.category || '').toLowerCase().includes('reflexo')
+            );
 
-                chipsContainer.innerHTML = categories.map(cat => {
-                    const label = cat === 'all' ? `Tous (${this.data.services.length})` : cat;
-                    const isActive = (this.catalogueCategory || 'all') === cat;
-                    return `<button class="filter-chip ${isActive ? 'active' : ''}" data-cat="${cat}" onclick="app.setCatalogueCategory('${cat}')">${label}</button>`;
-                }).join('');
-            }
-
-            let filtered = this.data.services;
-            if (this.catalogueCategory && this.catalogueCategory !== 'all') {
-                filtered = this.data.services.filter(s => (s.category || 'Soins') === this.catalogueCategory);
-            }
-
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1; padding: 50px 20px;">
-                        <div class="empty-state-icon" style="font-size: 3rem;"><i class="fa-solid fa-spa"></i></div>
-                        <h3>Aucune prestation dans cette catégorie</h3>
-                        <p style="margin-bottom: 20px;">Ajoutez un nouveau soin ou choisissez une autre catégorie.</p>
-                        <button class="btn btn-primary btn-sm" onclick="app.openNewServiceModal()">
-                            <i class="fa-solid fa-plus"></i> Ajouter une prestation
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = filtered.map(s => `
-                <div class="service-card">
-                    <div class="service-img-wrapper">
-                        <img src="${s.image || '../assets/img/mass1.webp'}" alt="${s.name}" class="service-img" onerror="this.src='../assets/img/mass1.webp'">
-                        <span class="service-cat-badge">${s.category || 'Soin'}</span>
-                        <span class="service-price-pill">${s.price} €</span>
-                    </div>
-                    <div class="service-card-body">
-                        <div>
-                            <h4 class="service-title">${s.name}</h4>
-                            <div class="service-duration-tag">
-                                <i class="fa-regular fa-clock"></i> ${s.duration} minutes
-                            </div>
-                            <p class="service-description">${s.description || 'Soin bien-être relaxant et thérapeutique.'}</p>
-                        </div>
-                        <div class="service-card-footer">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${s.colorBorder || '#5F9EA0'};"></span>
-                                <span style="font-size: 0.75rem; color: var(--text-muted);">Agenda</span>
-                            </div>
-                            <div style="display: flex; gap: 6px;">
-                                <button class="btn btn-outline btn-sm" onclick="app.editService('${s.id}')" title="Modifier">
-                                    <i class="fa-regular fa-pen-to-square"></i> Modifier
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="app.deleteService('${s.id}')" title="Supprimer">
-                                    <i class="fa-regular fa-trash-can"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            return;
-        }
-
-        // VUE TAB 2 : PACKS CADEAUX & FORFAITS
-        if (this.catalogueTab === 'packs') {
-            if (chipsContainer) chipsContainer.style.display = 'none';
-
-            container.innerHTML = this.giftPacks.map(p => `
-                <div class="service-card" style="border: 1.5px solid rgba(95, 158, 160, 0.3); box-shadow: 0 8px 24px rgba(95, 158, 160, 0.1);">
-                    <div class="service-img-wrapper">
-                        <img src="${p.image}" alt="${p.title}" class="service-img" onerror="this.src='../assets/img/mass1.webp'">
-                        <span class="service-cat-badge" style="background: rgba(23, 37, 42, 0.9); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3);">
-                            <i class="fa-solid fa-gift"></i> ${p.badge}
-                        </span>
-                        <span class="service-price-pill" style="background: linear-gradient(135deg, #059669, #10B981);">${p.price} €</span>
-                    </div>
-                    <div class="service-card-body">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
-                                <h4 class="service-title" style="margin: 0;">${p.title}</h4>
-                            </div>
-                            <div style="font-size: 0.78rem; color: var(--primary); font-weight: 600; margin-bottom: 6px;">
-                                ${p.subtitle}
-                            </div>
-                            <div class="service-duration-tag" style="background: rgba(16, 185, 129, 0.1); color: #059669;">
-                                <i class="fa-solid fa-layer-group"></i> ${p.duration} • Valeur ${p.realValue} €
-                            </div>
-                            <p class="service-description" style="margin-top: 8px;">${p.description}</p>
-                        </div>
-                        <div class="service-card-footer" style="padding-top: 14px; border-top: 1px dashed var(--border-color);">
-                            <span style="font-size: 0.78rem; color: #059669; font-weight: 600;">
-                                <i class="fa-solid fa-tag"></i> Économisez ${p.realValue - p.price} €
-                            </span>
-                            <a href="../bons-cadeaux.html?pack=${p.id}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration: none;">
-                                <i class="fa-solid fa-gift"></i> Offrir ce pack
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            return;
-        }
-
-        // VUE TAB 3 : CARTES CADEAUX (MONTANT LIBRE & PERSONNALISÉ)
-        if (this.catalogueTab === 'vouchers') {
-            if (chipsContainer) chipsContainer.style.display = 'none';
+            const isMassagesOpen = this.openAccordionCats['Massages'] !== false;
+            const isReflexoOpen = this.openAccordionCats['Réflexologie'] !== false;
 
             container.innerHTML = `
-                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 24px;">
-                    <div style="background: linear-gradient(135deg, #17252A 0%, #203A43 100%); border-radius: 20px; padding: 28px 24px; color: #ffffff; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="catalogue-cfixe-container">
+                    <!-- ACCORDÉON 1 : MASSAGES -->
+                    <div class="cfixe-cat-accordion">
+                        <div class="cfixe-cat-accordion-header" onclick="app.toggleCategoryAccordion('Massages')">
+                            <div class="cfixe-cat-title-wrap">
+                                <span class="cfixe-cat-title">Massages</span>
+                                <span class="cfixe-cat-badge">${massages.length}</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-${isMassagesOpen ? 'down' : 'right'} cfixe-cat-chevron"></i>
+                        </div>
+                        ${isMassagesOpen ? `
+                            <div class="cfixe-cat-accordion-body">
+                                ${massages.map(s => `
+                                    <div class="cfixe-pro-service-row">
+                                        <div class="cfixe-pro-service-left">
+                                            <span class="cfixe-color-dot" style="background-color: ${s.colorBorder || '#5F9EA0'};"></span>
+                                            <div>
+                                                <div class="cfixe-service-name">${s.name}</div>
+                                                <div class="cfixe-service-meta">${s.duration} minutes • ${Number(s.price).toFixed(2)} €</div>
+                                            </div>
+                                        </div>
+                                        <div class="cfixe-pro-service-actions">
+                                            <button class="btn btn-outline btn-sm" onclick="app.editService('${s.id}')" title="Modifier">
+                                                <i class="fa-regular fa-pen-to-square"></i> Modifier
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="app.deleteService('${s.id}')" title="Supprimer">
+                                                <i class="fa-regular fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- ACCORDÉON 2 : RÉFLEXOLOGIE -->
+                    <div class="cfixe-cat-accordion">
+                        <div class="cfixe-cat-accordion-header" onclick="app.toggleCategoryAccordion('Réflexologie')">
+                            <div class="cfixe-cat-title-wrap">
+                                <span class="cfixe-cat-title">Réflexologie</span>
+                                <span class="cfixe-cat-badge">${reflexo.length}</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-${isReflexoOpen ? 'down' : 'right'} cfixe-cat-chevron"></i>
+                        </div>
+                        ${isReflexoOpen ? `
+                            <div class="cfixe-cat-accordion-body">
+                                ${reflexo.map(s => `
+                                    <div class="cfixe-pro-service-row">
+                                        <div class="cfixe-pro-service-left">
+                                            <span class="cfixe-color-dot" style="background-color: ${s.colorBorder || '#2E7D32'};"></span>
+                                            <div>
+                                                <div class="cfixe-service-name">${s.name}</div>
+                                                <div class="cfixe-service-meta">${s.duration} minutes • ${Number(s.price).toFixed(2)} €</div>
+                                            </div>
+                                        </div>
+                                        <div class="cfixe-pro-service-actions">
+                                            <button class="btn btn-outline btn-sm" onclick="app.editService('${s.id}')" title="Modifier">
+                                                <i class="fa-regular fa-pen-to-square"></i> Modifier
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="app.deleteService('${s.id}')" title="Supprimer">
+                                                <i class="fa-regular fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // VUE TAB 2 : PACKS CADEAUX & FORFAITS (SCREENSHOT 4)
+        if (this.catalogueTab === 'packs') {
+            container.innerHTML = `
+                <div class="cfixe-pro-packs-list">
+                    ${this.giftPacks.map(p => `
+                        <div class="cfixe-pro-pack-card">
+                            <div class="cfixe-pro-pack-left">
+                                <div class="cfixe-pack-title">${p.title}</div>
+                                <div class="cfixe-pack-pills-row">
+                                    ${(p.items || []).map(it => `<span class="cfixe-pack-pill">${it}</span>`).join('')}
+                                </div>
+                            </div>
+                            <div class="cfixe-pro-pack-right">
+                                <div class="cfixe-pack-price">${Number(p.price).toFixed(2)} €</div>
+                                <div style="display: flex; gap: 6px;">
+                                    <button class="btn btn-outline btn-sm" onclick="app.editPack('${p.id}')" title="Modifier le pack">
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="app.deletePack('${p.id}')" title="Supprimer le pack">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                    <a href="../reserver.html#cadeaux" target="_blank" class="btn btn-outline btn-sm" title="Voir sur le site public">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            return;
+        }
+
+        // VUE TAB 3 : CARTES CADEAUX
+        if (this.catalogueTab === 'vouchers') {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 20px;">
+                    <div style="background: linear-gradient(135deg, #17252A 0%, #203A43 100%); border-radius: 18px; padding: 28px 24px; color: #ffffff; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.1);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
                             <div>
                                 <span style="display: inline-block; padding: 4px 10px; border-radius: 9999px; background: rgba(56, 189, 248, 0.2); color: #38BDF8; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
                                     Boutique Cadeaux en ligne
                                 </span>
-                                <h3 style="font-size: 1.4rem; font-weight: 700; margin: 0; color: #ffffff;">Offrez une parenthèse de sérénité</h3>
+                                <h3 style="font-size: 1.35rem; font-weight: 700; margin: 0; color: #ffffff;">Carte cadeau Stéphanie Bouteloup</h3>
                                 <p style="color: #94A3B8; font-size: 0.88rem; margin: 6px 0 0 0; max-width: 540px;">
-                                    Vos clients peuvent commander des bons cadeaux à montant libre (50€, 80€, 100€...) ou offrir un soin précis avec message personnalisé et téléchargement immédiat.
+                                    Vos clients peuvent commander des bons cadeaux à montant libre (50€, 80€, 100€...) ou offrir l'un de vos soins au choix avec paiement sécurisé.
                                 </p>
                             </div>
-                            <a href="../bons-cadeaux.html" target="_blank" class="btn btn-primary" style="background: #38BDF8; color: #0F172A; font-weight: 700; text-decoration: none;">
+                            <a href="../reserver.html#cadeaux" target="_blank" class="btn btn-primary" style="background: #38BDF8; color: #0F172A; font-weight: 700; text-decoration: none;">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Ouvrir la boutique cadeaux
                             </a>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 10px;">
-                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 16px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 6px;">
+                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
                                 <div style="font-size: 0.75rem; color: #94A3B8;">Montants suggérés</div>
-                                <div style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 4px;">50€ • 80€ • 110€</div>
+                                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 4px;">50€ • 80€ • 110€</div>
                             </div>
-                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 16px;">
+                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
                                 <div style="font-size: 0.75rem; color: #94A3B8;">Validité des bons</div>
-                                <div style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 4px;">1 an (12 mois)</div>
+                                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 4px;">1 an (12 mois)</div>
                             </div>
-                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 16px;">
+                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
                                 <div style="font-size: 0.75rem; color: #94A3B8;">Délivrance</div>
-                                <div style="font-size: 1.1rem; font-weight: 700; color: #34D399; margin-top: 4px;">Immédiate par email</div>
+                                <div style="font-size: 1.05rem; font-weight: 700; color: #34D399; margin-top: 4px;">Immédiate par email</div>
                             </div>
                         </div>
                     </div>

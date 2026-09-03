@@ -3520,6 +3520,225 @@ input, select, textarea {
     transform: scale(1.1);
 }
 
+/* ========================================================================= 
+   CATALOGUE CFIXÉ PRO (ACCORDÉONS & PACKS EXACTEMENT SCREENSHOTS 1, 3 & 4)
+   ========================================================================= */
+.catalogue-cfixe-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+/* Accordéon de catégorie (Screenshot 1 & 3) */
+.cfixe-cat-accordion {
+    background: #E8F8F7;
+    border-radius: 14px;
+    border: 1px solid rgba(95, 158, 160, 0.2);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.cfixe-cat-accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    background: #E8F8F7;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.cfixe-cat-accordion-header:hover {
+    background: #DCF3F1;
+}
+
+.cfixe-cat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cfixe-cat-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #17252A;
+}
+
+.cfixe-cat-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    background: rgba(95, 158, 160, 0.22);
+    color: #1F383E;
+}
+
+.cfixe-cat-chevron {
+    color: #17252A;
+    font-size: 0.95rem;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cfixe-cat-accordion-body {
+    background: #ffffff;
+    border-top: 1px solid rgba(95, 158, 160, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ligne prestation Cfixé Pro (Screenshot 3) */
+.cfixe-pro-service-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background 0.15s ease;
+}
+
+.cfixe-pro-service-row:last-child {
+    border-bottom: none;
+}
+
+.cfixe-pro-service-row:hover {
+    background: #FAFDFD;
+}
+
+.cfixe-pro-service-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cfixe-color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.cfixe-service-name {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #17252A;
+    margin-bottom: 2px;
+    line-height: 1.35;
+}
+
+.cfixe-service-meta {
+    font-size: 0.82rem;
+    color: var(--text-muted, #64748B);
+    font-weight: 500;
+}
+
+.cfixe-pro-service-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Pack Cards Cfixé Pro (Screenshot 4) */
+.cfixe-pro-packs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cfixe-pro-pack-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.cfixe-pro-pack-card:hover {
+    border-color: rgba(95, 158, 160, 0.45);
+    box-shadow: 0 4px 16px rgba(31, 56, 62, 0.07);
+}
+
+.cfixe-pro-pack-left {
+    flex: 1;
+    min-width: 220px;
+}
+
+.cfixe-pack-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #17252A;
+    margin-bottom: 8px;
+    line-height: 1.35;
+}
+
+.cfixe-pack-pills-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cfixe-pack-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #E8F4F8;
+    color: #1F383E;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(95, 158, 160, 0.25);
+}
+
+.cfixe-pro-pack-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.cfixe-pack-price {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-dark, #1F383E);
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .cfixe-pro-service-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+    }
+    .cfixe-pro-service-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .cfixe-pro-pack-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .cfixe-pro-pack-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
 
 
 

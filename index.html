@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS App -->
-    <link rel="stylesheet" href="css/app.css?v=10">
+    <link rel="stylesheet" href="css/app.css?v=11">
 </head>
 <body>
 
@@ -272,41 +272,40 @@
                     
                     <div class="catalogue-header-actions">
                         <div>
-                            <h2>Catalogue & Offres</h2>
+                            <h2>Catalogue</h2>
                             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
                                 Vos 15 soins authentiques, packs cadeaux et forfaits sur-mesure.
                             </p>
                         </div>
                         <div id="catalogueHeaderBtnWrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button class="btn btn-outline btn-sm" onclick="window.open('../bons-cadeaux.html', '_blank')">
-                                <i class="fa-solid fa-gift"></i> Page Cadeaux Publique
+                            <button class="btn btn-outline btn-sm" onclick="window.open('../reserver.html#cadeaux', '_blank')">
+                                <i class="fa-solid fa-gift"></i> Boutique Cadeaux
                             </button>
                             <button class="btn btn-primary btn-sm" id="btnOpenNewService" onclick="app.openNewServiceModal()">
-                                <i class="fa-solid fa-plus"></i> Ajouter une prestation
+                                <i class="fa-solid fa-plus"></i> + Ajouter
                             </button>
                         </div>
                     </div>
 
-                    <!-- Tabs Catalogue : Prestations | Packs & Forfaits | Cartes Cadeaux -->
+                    <!-- Tabs Catalogue : Prestation(s) | Carte(s) cadeau(x) | Pack(s) -->
                     <div class="catalogue-nav-tabs" id="catalogueNavTabs">
                         <button class="cat-tab-btn active" data-tab="services" onclick="app.setCatalogueTab('services')">
-                            <i class="fa-solid fa-spa"></i> Prestations <span class="cat-tab-count" id="countServicesTab">15</span>
-                        </button>
-                        <button class="cat-tab-btn" data-tab="packs" onclick="app.setCatalogueTab('packs')">
-                            <i class="fa-solid fa-box-open"></i> Packs Cadeaux & Forfaits <span class="cat-tab-count" id="countPacksTab">7</span>
+                            Prestation(s) <span class="cat-tab-count" id="countServicesTab">15</span>
                         </button>
                         <button class="cat-tab-btn" data-tab="vouchers" onclick="app.setCatalogueTab('vouchers')">
-                            <i class="fa-solid fa-gift"></i> Cartes Cadeaux
+                            Carte(s) cadeau(x)
+                        </button>
+                        <button class="cat-tab-btn" data-tab="packs" onclick="app.setCatalogueTab('packs')">
+                            Pack(s) <span class="cat-tab-count" id="countPacksTab">10</span>
                         </button>
                     </div>
 
-                    <!-- Category Pills for Prestations -->
-                    <div class="catalogue-filter-chips" id="catalogueCategoryChips">
-                        <!-- Populated dynamically -->
+                    <!-- Category Pills for Prestations (hidden in accordion mode) -->
+                    <div class="catalogue-filter-chips" id="catalogueCategoryChips" style="display: none;">
                     </div>
 
-                    <div class="services-cards-grid" id="servicesCardsGrid">
-                        <!-- Généré dynamiquement -->
+                    <div class="catalogue-cfixe-container" id="servicesCardsGrid">
+                        <!-- Généré dynamiquement en accordéons Cfixé -->
                     </div>
 
                 </section>
@@ -1067,6 +1066,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js?v=5"></script>
     <script src="js/calendar.js?v=4"></script>
-    <script src="js/app.js?v=19"></script>
+    <script src="js/app.js?v=20"></script>
 </body>
 </html>
