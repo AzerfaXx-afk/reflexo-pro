@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS App -->
-    <link rel="stylesheet" href="css/app.css?v=3">
+    <link rel="stylesheet" href="css/app.css?v=4">
 </head>
 <body>
 
@@ -845,6 +845,14 @@
             <button type="button" class="btn btn-primary btn-block" onclick="app.saveProfileModal()" style="padding: 13px; font-weight: 600; font-size: 0.95rem; border-radius: 14px;">
                 <i class="fa-solid fa-check"></i> Enregistrer les modifications
             </button>
+
+            <!-- Déconnexion dans le profil -->
+            <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0, 0, 0, 0.07);">
+                <button type="button" class="btn btn-outline btn-block text-danger" onclick="app.closeProfileModal(); app.logout();" style="border-color: rgba(239, 68, 68, 0.25); color: #dc2626; font-weight: 600; padding: 11px 16px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Se déconnecter</span>
+                </button>
+            </div>
         </div>
     </div>
 
