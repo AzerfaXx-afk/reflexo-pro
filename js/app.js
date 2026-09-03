@@ -2508,7 +2508,7 @@ class StephanieProApp {
             if (!cfixeData) {
                 await new Promise((resolve, reject) => {
                     const script = document.createElement('script');
-                    script.src = '../cfixe_data_backup.js?v=2';
+                    script.src = 'js/cfixe_data_backup.js?v=1';
                     script.onload = () => resolve();
                     script.onerror = () => reject(new Error('Fichier de données Cfixé introuvable'));
                     document.head.appendChild(script);
