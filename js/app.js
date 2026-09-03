@@ -622,6 +622,7 @@ class StephanieProApp {
         };
         this.saveData();
         this.renderAll();
+        this._realtimeSubscribed = false;
         await this.setupAuth();
         this.showToast('Déconnexion effectuée avec succès', 'info');
     }
@@ -637,6 +638,32 @@ class StephanieProApp {
             const connected = await window.supabaseService.testConnection();
             if (connected) {
                 console.log('⚡ Supabase Cloud connecté pour', this.currentUser.email);
+
+                // Activer l'écoute temps réel multi-écrans (PC <-> Mobile)
+                if (!this._realtimeSubscribed) {
+                    this._realtimeSubscribed = true;
+                    window.supabaseService.subscribeToChanges(this.currentUser.id, async (table) => {
+                        console.log('⚡ Synchronisation en direct reçue pour:', table);
+                        const freshState = await window.supabaseService.loadFullState();
+                        if (freshState) {
+                            if (Array.isArray(freshState.services)) this.data.services = freshState.services;
+                            if (Array.isArray(freshState.appointments)) this.data.appointments = freshState.appointments;
+                            if (Array.isArray(freshState.blockedSlots)) this.data.blockedSlots = freshState.blockedSlots;
+                            if (Array.isArray(freshState.clients)) this.data.clients = freshState.clients;
+                            if (freshState.schedule) this.data.schedule = freshState.schedule;
+                            if (freshState.bufferTime !== undefined) this.data.bufferTime = freshState.bufferTime;
+                            if (freshState.profilePhoto) this.data.profilePhoto = freshState.profilePhoto;
+                            if (freshState.practitionerName) this.data.practitionerName = freshState.practitionerName;
+                            if (freshState.cabinetInfo) this.data.cabinetInfo = freshState.cabinetInfo;
+
+                            this.saveData();
+                            this.renderAll();
+                            this.updateCabinetLiveStatus();
+                            if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
+                        }
+                    });
+                }
+
                 const cloudState = await window.supabaseService.loadFullState();
                 if (cloudState) {
                     if (Array.isArray(cloudState.services)) this.data.services = cloudState.services;

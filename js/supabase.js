@@ -57,7 +57,7 @@ class SupabaseService {
                 this.client.from('services').select('*').order('created_at', { ascending: true }),
                 this.client.from('appointments').select('*').order('date', { ascending: true }),
                 this.client.from('blocked_slots').select('*').order('date', { ascending: true }),
-                this.client.from('cabinet_settings').select('*').eq('id', 'main').maybeSingle()
+                this.client.from('cabinet_settings').select('*').maybeSingle()
             ]);
 
             // Formater les données pour l'état local
@@ -66,7 +66,9 @@ class SupabaseService {
                 name: c.name,
                 phone: c.phone || '',
                 email: c.email || '',
-                notes: c.notes || ''
+                notes: c.notes || '',
+                fidelity: c.fidelity || 1,
+                createdAt: c.created_at
             }));
 
             const services = (servicesRes.data || []).map(s => ({
@@ -98,6 +100,9 @@ class SupabaseService {
                 colorBg: a.color_bg,
                 colorBorder: a.color_border,
                 colorText: a.color_text,
+                paymentMethod: a.payment_method || 'sur_place',
+                paymentStatus: a.payment_status || 'A régler',
+                source: a.source || 'manual',
                 createdAt: a.created_at
             }));
 
@@ -365,6 +370,22 @@ class SupabaseService {
     onAuthStateChange(callback) {
         if (!this.client) return { data: { subscription: { unsubscribe: () => {} } } };
         return this.client.auth.onAuthStateChange(callback);
+    }
+
+    subscribeToChanges(userId, callback) {
+        if (!this.client || !userId) return;
+        if (this.realtimeChannel) {
+            try { this.client.removeChannel(this.realtimeChannel); } catch (e) {}
+        }
+
+        this.realtimeChannel = this.client
+            .channel('cabinet-realtime-' + userId)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => callback('appointments'))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => callback('clients'))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => callback('services'))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'cabinet_settings' }, () => callback('cabinet_settings'))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'blocked_slots' }, () => callback('blocked_slots'))
+            .subscribe();
     }
 }
 
