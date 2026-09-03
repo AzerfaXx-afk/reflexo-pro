@@ -14,10 +14,40 @@ class ProCalendar {
         
         this.startHour = 7.5; // 07h30
         this.endHour = 20.5;   // 20h30
-        this.pixelsPerHour = 60;
+        
+        // Niveaux de zoom fluide
+        this.zoomLevels = [
+            { level: 75, pixelsPerHour: 45, label: '75%' },
+            { level: 100, pixelsPerHour: 60, label: '100%' },
+            { level: 125, pixelsPerHour: 75, label: '125%' },
+            { level: 150, pixelsPerHour: 90, label: '150%' }
+        ];
+        this.currentZoomIndex = 1; // 100%
+        this.pixelsPerHour = this.zoomLevels[this.currentZoomIndex].pixelsPerHour;
         this.draggedEvent = null;
 
         this.init();
+    }
+
+    zoomIn() {
+        if (this.currentZoomIndex < this.zoomLevels.length - 1) {
+            this.currentZoomIndex++;
+            this.applyZoom();
+        }
+    }
+
+    zoomOut() {
+        if (this.currentZoomIndex > 0) {
+            this.currentZoomIndex--;
+            this.applyZoom();
+        }
+    }
+
+    applyZoom() {
+        this.pixelsPerHour = this.zoomLevels[this.currentZoomIndex].pixelsPerHour;
+        const badge = document.getElementById('calZoomBadge');
+        if (badge) badge.textContent = this.zoomLevels[this.currentZoomIndex].label;
+        this.render(this.events, this.blockedSlots);
     }
 
     getMonday(d) {
@@ -65,9 +95,11 @@ class ProCalendar {
         return `${y}-${m}-${d}`;
     }
 
-    render(events = [], blockedSlots = []) {
-        this.events = events;
-        this.blockedSlots = blockedSlots;
+    render(events = null, blockedSlots = null) {
+        if (events !== null) this.events = events;
+        if (blockedSlots !== null) this.blockedSlots = blockedSlots;
+        this.events = this.events || [];
+        this.blockedSlots = this.blockedSlots || [];
         
         if (!this.container) return;
 
@@ -103,13 +135,15 @@ class ProCalendar {
         // Body with Time Axis & Columns
         let bodyHtml = `<div class="calendar-body-scroll"><div class="calendar-grid-body">`;
 
+        const slotHalfHourHeight = this.pixelsPerHour / 2;
+
         // Time Axis
         bodyHtml += `<div class="time-axis">`;
         for (let h = 7.5; h < 20.5; h += 0.5) {
             const hour = Math.floor(h);
             const min = h % 1 === 0 ? '00' : '30';
             const label = min === '00' ? `${hour}h` : '';
-            bodyHtml += `<div class="time-slot-label">${label}</div>`;
+            bodyHtml += `<div class="time-slot-label" style="height: ${slotHalfHourHeight}px; line-height: ${slotHalfHourHeight}px;">${label}</div>`;
         }
         bodyHtml += `</div>`;
 
@@ -125,7 +159,7 @@ class ProCalendar {
                 const hour = Math.floor(h);
                 const min = h % 1 === 0 ? '00' : '30';
                 const timeStr = `${String(hour).padStart(2, '0')}:${min}`;
-                bodyHtml += `<div class="hour-line" data-time="${timeStr}" title="Cliquez pour ajouter un RDV"></div>`;
+                bodyHtml += `<div class="hour-line" data-time="${timeStr}" style="height: ${slotHalfHourHeight}px;" title="Cliquez pour ajouter un RDV"></div>`;
             }
 
             // Render Events for this day

@@ -32,11 +32,11 @@
              ========================================================================= -->
         <aside class="sidebar">
             <div>
-                <div class="sidebar-header">
+                <div class="sidebar-header clickable-brand" id="sidebarBrandLink" role="button" tabindex="0" title="Retourner au Tableau de bord">
                     <img src="assets/icon-pro-512.png" alt="Logo Stéphanie Pro" class="sidebar-logo">
                     <div>
                         <div class="sidebar-brand-title">Stéphanie Bouteloup</div>
-                        <span class="sidebar-brand-badge">PRO & CABINET</span>
+                        <span class="sidebar-brand-badge">Ton agenda</span>
                     </div>
                 </div>
 
@@ -65,12 +65,15 @@
             </div>
 
             <div class="sidebar-footer">
-                <div class="user-profile-pill">
-                    <div class="user-info">
-                        <span class="user-name">Stéphanie B.</span>
-                        <span class="user-status">Cabinet ouvert</span>
+                <div class="cabinet-live-card" id="cabinetLiveCard">
+                    <div class="live-status-pill open" id="liveStatusBadge">
+                        <span class="live-status-dot"></span>
+                        <span class="live-status-label" id="liveStatusLabel">Cabinet ouvert</span>
                     </div>
-                    <i class="fa-solid fa-circle-check" style="color: var(--success); font-size: 1.1rem;"></i>
+                    <div class="live-hours-detail">
+                        <i class="fa-regular fa-clock"></i>
+                        <span id="liveHoursText">Ferme à 19h00</span>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -201,8 +204,16 @@
                             <span class="calendar-period-title" id="calendarPeriodTitle">Cette semaine</span>
                         </div>
 
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-arrows-up-down-left-right" style="margin-right: 4px;"></i>Glissez un RDV pour le déplacer</span>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <div class="calendar-zoom-group">
+                                <button class="btn btn-icon-glass" id="calZoomOutBtn" title="Dézoomer l'agenda">
+                                    <i class="fa-solid fa-magnifying-glass-minus"></i>
+                                </button>
+                                <span class="zoom-badge" id="calZoomBadge">100%</span>
+                                <button class="btn btn-icon-glass" id="calZoomInBtn" title="Zoomer l'agenda">
+                                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                </button>
+                            </div>
                             <button class="btn btn-primary btn-sm" onclick="app.openNewAppointmentModal()">
                                 <i class="fa-solid fa-plus"></i> Ajouter RDV
                             </button>
@@ -230,9 +241,6 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button class="btn btn-outline" onclick="app.importCfixePresets()">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Importer mes soins Cfixe
-                            </button>
                             <button class="btn btn-primary" id="btnOpenNewService">
                                 <i class="fa-solid fa-plus"></i> Ajouter une prestation
                             </button>
@@ -436,9 +444,18 @@
                 </div>
                 <div class="form-group">
                     <label>Soin / Prestation choisie *</label>
-                    <select class="form-control" id="appointmentServiceSelect" required>
-                        <!-- Rempli en JS -->
-                    </select>
+                    <div class="custom-select-wrapper" id="customServiceSelectWrapper">
+                        <button type="button" class="custom-select-trigger" id="customServiceSelectTrigger">
+                            <div class="trigger-content" id="triggerSelectedService">
+                                <span class="placeholder">Sélectionnez une prestation...</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down select-chevron"></i>
+                        </button>
+                        <div class="custom-select-dropdown" id="customServiceDropdown">
+                            <!-- Rempli en JS avec cartes élégantes, tarifs et durées -->
+                        </div>
+                        <input type="hidden" id="appointmentServiceSelect" required>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -535,12 +552,16 @@
                     <input type="text" class="form-control" id="serviceName" required placeholder="Ex: Massage suédois personnalisé">
                 </div>
                 <div class="form-group">
-                    <label>Catégorie</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin-bottom: 0;">Catégorie</label>
+                        <button type="button" class="btn-text-link" id="btnToggleNewCategory"><i class="fa-solid fa-plus"></i> Nouvelle catégorie</button>
+                    </div>
                     <div class="pills-group" id="categoryPillsGroup">
-                        <span class="pill-option active" data-value="Massages"><i class="fa-solid fa-spa"></i> Massages</span>
-                        <span class="pill-option" data-value="Réflexologie"><i class="fa-solid fa-hand-holding-heart"></i> Réflexologie</span>
-                        <span class="pill-option" data-value="Soins Visage"><i class="fa-solid fa-face-smile"></i> Kobido / Visage</span>
-                        <span class="pill-option" data-value="Soins Combinés"><i class="fa-solid fa-layer-group"></i> Soins Combinés</span>
+                        <!-- Généré dynamiquement en JS -->
+                    </div>
+                    <div class="new-category-box" id="newCategoryBox" style="display: none; margin-top: 8px;">
+                        <input type="text" class="form-control" id="newCategoryInput" placeholder="Ex: Drainage lymphatique, Énergétique...">
+                        <button type="button" class="btn btn-primary btn-sm" id="btnConfirmNewCategory"><i class="fa-solid fa-check"></i> Ajouter</button>
                     </div>
                     <input type="hidden" id="serviceCategory" value="Massages">
                 </div>
@@ -553,6 +574,11 @@
                         <span class="pill-option" data-value="75">75 min</span>
                         <span class="pill-option" data-value="90">90 min (1h30)</span>
                         <span class="pill-option" data-value="120">120 min (2h)</span>
+                        <span class="pill-option" data-value="custom" id="pillCustomDuration"><i class="fa-solid fa-sliders"></i> Personnalisée</span>
+                    </div>
+                    <div class="custom-duration-wrapper" id="customDurationWrapper" style="display: none;">
+                        <input type="number" class="form-control" id="customDurationInput" placeholder="Ex: 50" min="5" max="360" step="5">
+                        <span class="unit-label">minutes</span>
                     </div>
                     <input type="hidden" id="serviceDuration" value="60">
                 </div>
@@ -570,7 +596,7 @@
                 <div class="form-group">
                     <label>Couleur du bloc sur l'agenda</label>
                     <div class="color-picker-options" id="colorPickerContainer">
-                        <!-- Rempli en JS -->
+                        <!-- 12 Couleurs raffinées générées en JS -->
                     </div>
                 </div>
                 <div class="form-group">
@@ -601,17 +627,17 @@
 
 
     <!-- ========================================================================= 
-         MODAL 4 : BLOQUER UN CRÉNEAU (PAUSE / IMPRÉVU)
+         MODAL 4 : BLOQUER UN CRÉNEAU (PAUSE / IMPRÉVU / MODIFICATION)
          ========================================================================= -->
     <div class="modal-backdrop" id="modalBlockSlot">
         <div class="modal-card">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-ban" style="color: var(--danger); margin-right: 6px;"></i> Bloquer un créneau</h3>
+                <h3 id="blockSlotModalTitle"><i class="fa-solid fa-ban" style="color: var(--danger); margin-right: 6px;"></i> <span id="blockSlotTitleText">Bloquer un créneau</span></h3>
                 <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="formBlockSlot">
                 <div class="form-group">
-                    <label>Motif de l'indisponibilité</label>
+                    <label>Motif de l'indisponibilité (Pause, etc.)</label>
                     <input type="text" class="form-control" id="blockReason" placeholder="Ex: Pause déjeuner, RDV personnel, Déplacement...">
                 </div>
                 <div class="form-row">
@@ -626,16 +652,27 @@
                 </div>
                 <div class="form-group">
                     <label>Durée de l'absence</label>
-                    <select class="form-control" id="blockDuration">
-                        <option value="30">30 minutes</option>
-                        <option value="60" selected>1 heure</option>
-                        <option value="120">2 heures</option>
-                        <option value="240">Demi-journée (4 heures)</option>
-                        <option value="480">Journée complète</option>
-                    </select>
+                    <div class="pills-group" id="blockDurationPillsGroup">
+                        <span class="pill-option" data-value="30">30 min</span>
+                        <span class="pill-option active" data-value="60">1 heure</span>
+                        <span class="pill-option" data-value="120">2 heures</span>
+                        <span class="pill-option" data-value="240">Demi-journée (4h)</span>
+                        <span class="pill-option" data-value="480">Journée complète</span>
+                        <span class="pill-option" data-value="custom" id="pillCustomBlockDuration"><i class="fa-solid fa-sliders"></i> Personnalisée</span>
+                    </div>
+                    <div class="custom-duration-wrapper" id="customBlockDurationWrapper" style="display: none;">
+                        <input type="number" class="form-control" id="customBlockDurationInput" placeholder="Ex: 90" min="10" max="600" step="10">
+                        <span class="unit-label">minutes</span>
+                    </div>
+                    <input type="hidden" id="blockDuration" value="60">
                 </div>
-                <div style="margin-top: 20px;">
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;"><i class="fa-solid fa-lock"></i> Bloquer ce créneau</button>
+                <div style="display: flex; gap: 10px; margin-top: 24px;">
+                    <button type="button" class="btn btn-danger" id="btnDeleteBlockSlot" style="display: none; padding: 12px 18px;">
+                        <i class="fa-solid fa-trash-can"></i> Supprimer
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitBlockSlot" style="flex: 1; padding: 12px;">
+                        <i class="fa-solid fa-lock" id="iconSubmitBlockSlot"></i> <span id="textSubmitBlockSlot">Bloquer ce créneau</span>
+                    </button>
                 </div>
             </form>
         </div>

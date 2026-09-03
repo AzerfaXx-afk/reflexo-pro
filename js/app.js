@@ -143,14 +143,20 @@ const PRESET_IMAGES = [
     'assets/img/tech2.webp'
 ];
 
-// Palette de couleurs pour les soins
+// Palette de 12 couleurs de luxe pour les soins (harmonies bien-être & spa)
 const PRESET_COLORS = [
-    { bg: '#E8EAF6', border: '#5C6BC0', text: '#1A237E', label: 'Indigo' },
-    { bg: '#FCE4EC', border: '#EC407A', text: '#880E4F', label: 'Rose' },
-    { bg: '#FFF8E1', border: '#FFB300', text: '#E65100', label: 'Ambre' },
-    { bg: '#E0F2F1', border: '#26A69A', text: '#004D40', label: 'Turquoise' },
-    { bg: '#F3E5F5', border: '#AB47BC', text: '#4A148C', label: 'Violet' },
-    { bg: '#FBE9E7', border: '#FF7043', text: '#BF360C', label: 'Pêche' }
+    { bg: '#E0F2F1', border: '#26A69A', text: '#004D40', label: 'Turquoise Lagon' },
+    { bg: '#E8F5E9', border: '#43A047', text: '#1B5E20', label: 'Sauge Nature' },
+    { bg: '#FCE4EC', border: '#EC407A', text: '#880E4F', label: 'Rose Poudré' },
+    { bg: '#FBE9E7', border: '#FF7043', text: '#BF360C', label: 'Terracotta' },
+    { bg: '#EDE7F6', border: '#7E57C2', text: '#311B92', label: 'Lavande Douce' },
+    { bg: '#E1F5FE', border: '#039BE5', text: '#01579B', label: 'Bleu Céleste' },
+    { bg: '#FFF8E1', border: '#FFB300', text: '#B57900', label: 'Ambre Doré' },
+    { bg: '#E8EAF6', border: '#3949AB', text: '#1A237E', label: 'Indigo Nuit' },
+    { bg: '#F3E5F5', border: '#8E24AA', text: '#4A148C', label: 'Prune Royale' },
+    { bg: '#E0F7FA', border: '#00ACC1', text: '#006064', label: 'Eucalyptus' },
+    { bg: '#FFF3E0', border: '#FB8C00', text: '#E65100', label: 'Corail Pêche' },
+    { bg: '#EFEBE9', border: '#8D6E63', text: '#3E2723', label: 'Sable Chaud' }
 ];
 
 class StephanieProApp {
@@ -161,6 +167,7 @@ class StephanieProApp {
         this.selectedImage = PRESET_IMAGES[0];
         this.selectedColor = PRESET_COLORS[0];
         this.editingServiceId = null;
+        this.editingBlockedSlotId = null;
 
         this.calendar = null;
 
@@ -168,23 +175,29 @@ class StephanieProApp {
     }
 
     loadData() {
+        let data = {
+            services: [],
+            appointments: [],
+            blockedSlots: [],
+            clients: [],
+            notifications: [],
+            categories: ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés']
+        };
+
         const saved = localStorage.getItem(this.storageKey);
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                data = { ...data, ...parsed };
+                if (!data.categories || data.categories.length === 0) {
+                    data.categories = ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés'];
+                }
             } catch (e) {
                 console.error('Error loading data', e);
             }
         }
         
-        // Application vide au départ comme demandé par l'utilisateur
-        return {
-            services: [],
-            appointments: [],
-            blockedSlots: [],
-            clients: [],
-            notifications: []
-        };
+        return data;
     }
 
     saveData() {
@@ -197,6 +210,10 @@ class StephanieProApp {
         this.renderAll();
         this.setupModals();
         this.updateHeaderDate();
+        this.updateCabinetLiveStatus();
+
+        // Rafraîchir le statut en direct toutes les 30 secondes
+        setInterval(() => this.updateCabinetLiveStatus(), 30000);
 
         // Enregistrer Service Worker pour PWA
         if ('serviceWorker' in navigator) {
@@ -212,10 +229,87 @@ class StephanieProApp {
         if (el) el.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
     }
 
+    /* STATUT DU CABINET EN DIRECT (HORAIRES RÉELS) */
+    updateCabinetLiveStatus() {
+        const badge = document.getElementById('liveStatusBadge');
+        const label = document.getElementById('liveStatusLabel');
+        const detail = document.getElementById('liveHoursText');
+        if (!badge || !label || !detail) return;
+
+        const now = new Date();
+        const dayIndex = now.getDay(); // 0 = Dimanche, 1 = Lundi...
+        const dayMap = [6, 0, 1, 2, 3, 4, 5]; // [Lun, Mar, Mer, Jeu, Ven, Sam, Dim]
+        const schedIndex = dayMap[dayIndex];
+
+        const schedule = this.data.schedule || [
+            { day: 'Lundi', open: true, start: '08:30', end: '19:00' },
+            { day: 'Mardi', open: true, start: '08:30', end: '19:00' },
+            { day: 'Mercredi', open: true, start: '08:30', end: '19:00' },
+            { day: 'Jeudi', open: true, start: '08:30', end: '19:00' },
+            { day: 'Vendredi', open: true, start: '08:30', end: '19:00' },
+            { day: 'Samedi', open: true, start: '09:00', end: '18:00' },
+            { day: 'Dimanche', open: false, start: '09:00', end: '18:00' }
+        ];
+
+        const todaySched = schedule[schedIndex];
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const parseMinutes = (timeStr) => {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        let isOpen = false;
+        let statusText = 'Cabinet fermé';
+        let detailText = '';
+
+        if (todaySched && todaySched.open) {
+            const startMin = parseMinutes(todaySched.start);
+            const endMin = parseMinutes(todaySched.end);
+
+            if (currentMinutes >= startMin && currentMinutes < endMin) {
+                isOpen = true;
+                statusText = 'Cabinet ouvert';
+                detailText = `Ferme à ${todaySched.end.replace(':', 'h')}`;
+            } else if (currentMinutes < startMin) {
+                statusText = 'Cabinet fermé';
+                detailText = `Ouvre à ${todaySched.start.replace(':', 'h')}`;
+            } else {
+                statusText = 'Cabinet fermé';
+                detailText = 'Fermé pour la journée';
+            }
+        } else {
+            statusText = 'Cabinet fermé';
+            detailText = 'Fermé aujourd\'hui';
+        }
+
+        if (isOpen) {
+            badge.className = 'live-status-pill open';
+            label.textContent = statusText;
+            detail.textContent = detailText;
+        } else {
+            badge.className = 'live-status-pill closed';
+            label.textContent = statusText;
+            detail.textContent = detailText;
+        }
+    }
+
     /* ========================================================================= 
        NAVIGATION
        ========================================================================= */
     setupNavigation() {
+        // Logo de marque en haut à gauche -> Retour Dashboard
+        const brandLink = document.getElementById('sidebarBrandLink');
+        brandLink?.addEventListener('click', () => {
+            this.switchView('dashboard');
+        });
+        brandLink?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.switchView('dashboard');
+            }
+        });
+
         const navLinks = document.querySelectorAll('[data-view]');
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
@@ -296,6 +390,15 @@ class StephanieProApp {
         document.getElementById('calTodayBtn')?.addEventListener('click', () => {
             this.calendar.today();
             this.calendar.render(this.data.appointments, this.data.blockedSlots);
+        });
+
+        // Zoom in & Zoom out controls
+        document.getElementById('calZoomInBtn')?.addEventListener('click', () => {
+            if (this.calendar) this.calendar.zoomIn();
+        });
+
+        document.getElementById('calZoomOutBtn')?.addEventListener('click', () => {
+            if (this.calendar) this.calendar.zoomOut();
         });
     }
 
@@ -440,9 +543,6 @@ class StephanieProApp {
                         <button class="btn btn-primary" onclick="app.openNewServiceModal()">
                             <i class="fa-solid fa-plus"></i> Ajouter une prestation
                         </button>
-                        <button class="btn btn-outline" onclick="app.importCfixePresets()">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Pré-remplir avec mes soins Cfixe
-                        </button>
                     </div>
                 </div>
             `;
@@ -481,14 +581,6 @@ class StephanieProApp {
                 </div>
             </div>
         `).join('');
-    }
-
-    importCfixePresets() {
-        this.data.services = [...CFIXE_PRESET_SERVICES];
-        this.saveData();
-        this.renderCatalogue();
-        this.populateServiceDropdown();
-        this.showToast('10 Prestations Cfixe importées dans votre catalogue !', 'success');
     }
 
     /* ========================================================================= 
@@ -609,22 +701,106 @@ class StephanieProApp {
             this.renderClients(e.target.value);
         });
 
-        // Category Pills
-        document.querySelectorAll('#categoryPillsGroup .pill-option').forEach(pill => {
-            pill.addEventListener('click', () => {
-                document.querySelectorAll('#categoryPillsGroup .pill-option').forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                document.getElementById('serviceCategory').value = pill.getAttribute('data-value');
-            });
+        // Catégorie dynamique : Toggle formulaire d'ajout
+        document.getElementById('btnToggleNewCategory')?.addEventListener('click', () => {
+            const box = document.getElementById('newCategoryBox');
+            if (box) {
+                box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+                if (box.style.display === 'flex') document.getElementById('newCategoryInput')?.focus();
+            }
         });
 
-        // Duration Pills
+        // Confirmer l'ajout de catégorie
+        document.getElementById('btnConfirmNewCategory')?.addEventListener('click', () => {
+            const val = document.getElementById('newCategoryInput')?.value;
+            if (val) this.addNewCategory(val);
+        });
+
+        document.getElementById('newCategoryInput')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = e.target.value;
+                if (val) this.addNewCategory(val);
+            }
+        });
+
+        // Durée de séance pour les prestations (Quick pills + Custom input)
         document.querySelectorAll('#durationPillsGroup .pill-option').forEach(pill => {
             pill.addEventListener('click', () => {
                 document.querySelectorAll('#durationPillsGroup .pill-option').forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
-                document.getElementById('serviceDuration').value = pill.getAttribute('data-value');
+                const val = pill.getAttribute('data-value');
+                const customWrapper = document.getElementById('customDurationWrapper');
+                const customInput = document.getElementById('customDurationInput');
+
+                if (val === 'custom') {
+                    if (customWrapper) customWrapper.style.display = 'flex';
+                    if (customInput) {
+                        customInput.focus();
+                        if (customInput.value) document.getElementById('serviceDuration').value = customInput.value;
+                    }
+                } else {
+                    if (customWrapper) customWrapper.style.display = 'none';
+                    document.getElementById('serviceDuration').value = val;
+                }
             });
+        });
+
+        document.getElementById('customDurationInput')?.addEventListener('input', (e) => {
+            const val = Number(e.target.value);
+            if (val > 0) {
+                document.getElementById('serviceDuration').value = val;
+            }
+        });
+
+        // Durée pour bloquer un créneau (Quick pills + Custom input)
+        document.querySelectorAll('#blockDurationPillsGroup .pill-option').forEach(pill => {
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('#blockDurationPillsGroup .pill-option').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                const val = pill.getAttribute('data-value');
+                const customWrapper = document.getElementById('customBlockDurationWrapper');
+                const customInput = document.getElementById('customBlockDurationInput');
+
+                if (val === 'custom') {
+                    if (customWrapper) customWrapper.style.display = 'flex';
+                    if (customInput) {
+                        customInput.focus();
+                        if (customInput.value) document.getElementById('blockDuration').value = customInput.value;
+                    }
+                } else {
+                    if (customWrapper) customWrapper.style.display = 'none';
+                    document.getElementById('blockDuration').value = val;
+                }
+            });
+        });
+
+        document.getElementById('customBlockDurationInput')?.addEventListener('input', (e) => {
+            const val = Number(e.target.value);
+            if (val > 0) {
+                document.getElementById('blockDuration').value = val;
+            }
+        });
+
+        // Bouton supprimer l'indisponibilité (pause)
+        document.getElementById('btnDeleteBlockSlot')?.addEventListener('click', () => {
+            if (this.editingBlockedSlotId) {
+                this.deleteBlockedSlot(this.editingBlockedSlotId);
+            }
+        });
+
+        // Custom Select Dropdown pour Prestation
+        const customSelectTrigger = document.getElementById('customServiceSelectTrigger');
+        const customSelectWrapper = document.getElementById('customServiceSelectWrapper');
+        customSelectTrigger?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            customSelectWrapper?.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#customServiceSelectWrapper')) {
+                customSelectWrapper?.classList.remove('open');
+            }
         });
 
         // Buffer Pills
@@ -653,6 +829,49 @@ class StephanieProApp {
         this.renderImagePickerPresets();
         this.renderColorPickerPresets();
         this.renderSettingsSchedule();
+        this.renderCategoryPills();
+    }
+
+    /* GESTION DYNAMIQUE DES CATÉGORIES */
+    renderCategoryPills(selectedCategory = 'Massages') {
+        const container = document.getElementById('categoryPillsGroup');
+        if (!container) return;
+
+        const categories = this.data.categories || ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés'];
+        this.data.categories = categories;
+
+        container.innerHTML = categories.map(cat => `
+            <span class="pill-option ${cat === selectedCategory ? 'active' : ''}" data-value="${cat}" onclick="app.selectCategory('${cat.replace(/'/g, "\\'")}')">
+                ${cat}
+            </span>
+        `).join('');
+
+        const hiddenInput = document.getElementById('serviceCategory');
+        if (hiddenInput) hiddenInput.value = selectedCategory;
+    }
+
+    selectCategory(cat) {
+        document.querySelectorAll('#categoryPillsGroup .pill-option').forEach(p => {
+            if (p.getAttribute('data-value') === cat) p.classList.add('active');
+            else p.classList.remove('active');
+        });
+        const hiddenInput = document.getElementById('serviceCategory');
+        if (hiddenInput) hiddenInput.value = cat;
+    }
+
+    addNewCategory(catName) {
+        const trimmed = catName.trim();
+        if (!trimmed) return;
+        if (!this.data.categories.includes(trimmed)) {
+            this.data.categories.push(trimmed);
+            this.saveData();
+        }
+        this.renderCategoryPills(trimmed);
+        const box = document.getElementById('newCategoryBox');
+        if (box) box.style.display = 'none';
+        const input = document.getElementById('newCategoryInput');
+        if (input) input.value = '';
+        this.showToast(`Nouvelle catégorie "${trimmed}" ajoutée !`, 'success');
     }
 
     renderImagePickerPresets() {
@@ -672,17 +891,19 @@ class StephanieProApp {
         if (element) element.classList.add('selected');
     }
 
-    renderColorPickerPresets() {
+    renderColorPickerPresets(selectedIdx = 0) {
         const container = document.getElementById('colorPickerContainer');
         if (!container) return;
 
         container.innerHTML = PRESET_COLORS.map((c, idx) => `
-            <div class="color-option-radio ${idx === 0 ? 'selected' : ''}" 
+            <div class="color-option-radio ${idx === selectedIdx ? 'selected' : ''}" 
                  style="background-color: ${c.border};" 
                  title="${c.label}"
                  onclick="app.selectColorPreset(${idx}, this)">
             </div>
         `).join('');
+
+        this.selectedColor = PRESET_COLORS[selectedIdx];
     }
 
     selectColorPreset(idx, element) {
@@ -691,107 +912,55 @@ class StephanieProApp {
         if (element) element.classList.add('selected');
     }
 
+    /* MENU DÉROULANT HAUT DE GAMME POUR LES SOINS */
     populateServiceDropdown() {
-        const select = document.getElementById('appointmentServiceSelect');
-        if (!select) return;
+        this.renderCustomServiceDropdown();
+    }
+
+    renderCustomServiceDropdown() {
+        const dropdown = document.getElementById('customServiceDropdown');
+        const triggerContent = document.getElementById('triggerSelectedService');
+        const hiddenInput = document.getElementById('appointmentServiceSelect');
+        if (!dropdown || !triggerContent || !hiddenInput) return;
 
         if (this.data.services.length === 0) {
-            select.innerHTML = `<option value="">-- Aucun soin enregistré (Ajoutez-en dans Catalogue) --</option>`;
+            dropdown.innerHTML = `<div class="custom-select-option" style="cursor: default; color: var(--text-muted);">Aucune prestation dans le catalogue</div>`;
+            triggerContent.innerHTML = `<span class="placeholder">Aucun soin disponible</span>`;
+            hiddenInput.value = '';
             return;
         }
 
-        select.innerHTML = this.data.services.map(s => `
-            <option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}">
-                ${s.name} (${s.duration} min - ${s.price} €)
-            </option>
-        `).join('');
-    }
+        dropdown.innerHTML = this.data.services.map(s => {
+            const isSelected = hiddenInput.value === s.id;
+            return `
+                <div class="custom-select-option ${isSelected ? 'selected' : ''}" data-id="${s.id}" onclick="app.selectCustomService('${s.id}')">
+                    <div class="option-left">
+                        <span class="option-color-dot" style="background-color: ${s.colorBorder || '#5F9EA0'};"></span>
+                        <div>
+                            <div class="option-title">${s.name}</div>
+                            <div class="option-meta">${s.category || 'Soin'}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="option-badge">${s.duration} min • ${s.price} €</span>
+                        ${isSelected ? '<i class="fa-solid fa-check option-check"></i>' : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
 
-    openNewAppointmentModal(date, time) {
-        this.populateServiceDropdown();
-        const modal = document.getElementById('modalNewAppointment');
-        if (!modal) return;
-
-        document.getElementById('apptDate').value = date || new Date().toISOString().split('T')[0];
-        document.getElementById('apptTime').value = time || '10:00';
-        document.getElementById('apptClientName').value = '';
-        document.getElementById('apptClientPhone').value = '';
-        document.getElementById('apptClientEmail').value = '';
-        document.getElementById('apptNotes').value = '';
-
-        modal.classList.add('open');
-    }
-
-    openNewAppointmentForClient(clientName, clientPhone) {
-        this.openNewAppointmentModal();
-        document.getElementById('apptClientName').value = clientName || '';
-        document.getElementById('apptClientPhone').value = clientPhone || '';
-    }
-
-    saveNewAppointment() {
-        const clientName = document.getElementById('apptClientName').value.trim();
-        const clientPhone = document.getElementById('apptClientPhone').value.trim();
-        const clientEmail = document.getElementById('apptClientEmail').value.trim();
-        const serviceSelect = document.getElementById('appointmentServiceSelect');
-        const serviceId = serviceSelect.value;
-        const selectedOption = serviceSelect.selectedOptions[0];
-
-        const date = document.getElementById('apptDate').value;
-        const time = document.getElementById('apptTime').value;
-        const notes = document.getElementById('apptNotes').value.trim();
-
-        if (!clientName) {
-            alert('Veuillez renseigner le nom de la cliente.');
-            return;
+        if (hiddenInput.value) {
+            const s = this.data.services.find(srv => srv.id === hiddenInput.value);
+            if (s) {
+                triggerContent.innerHTML = `
+                    <div class="trigger-selected-item">
+                        <span class="trigger-dot" style="background-color: ${s.colorBorder || '#5F9EA0'};"></span>
+                        <span>${s.name}</span>
+                        <span class="option-badge" style="margin-left: auto;">${s.duration}m • ${s.price}€</span>
+                    </div>
+                `;
+            }
         }
-
-        const service = this.data.services.find(s => s.id === serviceId);
-        const serviceName = service ? service.name : (selectedOption ? selectedOption.text : 'Prestation');
-        const duration = service ? service.duration : 60;
-        const price = service ? service.price : 80;
-        const colorBg = service ? service.colorBg : '#E8EAF6';
-        const colorBorder = service ? service.colorBorder : '#5F9EA0';
-        const colorText = service ? service.colorText : '#1F383E';
-
-        const newAppt = {
-            id: 'appt_' + Date.now(),
-            clientName,
-            clientPhone,
-            clientEmail,
-            serviceId,
-            serviceName,
-            duration,
-            price,
-            date,
-            time,
-            notes,
-            colorBg,
-            colorBorder,
-            colorText,
-            createdAt: new Date().toISOString()
-        };
-
-        this.data.appointments.push(newAppt);
-
-        // Sauvegarder dans le répertoire client si pas déjà existant
-        let existingClient = this.data.clients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
-        if (!existingClient) {
-            this.data.clients.push({
-                id: 'cli_' + Date.now(),
-                name: clientName,
-                phone: clientPhone,
-                email: clientEmail
-            });
-        } else if (clientPhone && !existingClient.phone) {
-            existingClient.phone = clientPhone;
-        }
-
-        this.addNotification(`Nouveau RDV pris : ${clientName} - ${serviceName} (${date} à ${time})`);
-        this.saveData();
-
-        document.getElementById('modalNewAppointment').classList.remove('open');
-        this.renderAll();
-        this.showToast(`Rendez-vous enregistré avec succès pour ${clientName} !`, 'success');
     }
 
     openAppointmentDetails(id) {
@@ -852,30 +1021,29 @@ class StephanieProApp {
 
         document.getElementById('serviceModalTitle').textContent = 'Nouvelle Prestation';
         document.getElementById('serviceName').value = '';
-        document.getElementById('serviceCategory').value = 'Massages';
-        document.getElementById('serviceDuration').value = '60';
         document.getElementById('servicePrice').value = '80';
         document.getElementById('serviceDescription').value = '';
+        document.getElementById('serviceDuration').value = '60';
 
-        // Reset category pills
-        document.querySelectorAll('#categoryPillsGroup .pill-option').forEach(p => {
-            if (p.getAttribute('data-value') === 'Massages') p.classList.add('active');
-            else p.classList.remove('active');
-        });
+        // Catégorie dynamique
+        this.renderCategoryPills('Massages');
+        const newCatBox = document.getElementById('newCategoryBox');
+        if (newCatBox) newCatBox.style.display = 'none';
 
-        // Reset duration pills
+        // Durée standard
         document.querySelectorAll('#durationPillsGroup .pill-option').forEach(p => {
             if (p.getAttribute('data-value') === '60') p.classList.add('active');
             else p.classList.remove('active');
         });
+        const customWrapper = document.getElementById('customDurationWrapper');
+        if (customWrapper) customWrapper.style.display = 'none';
 
         const dropzoneText = document.getElementById('dropzoneText');
         if (dropzoneText) dropzoneText.textContent = 'Téléverser une photo depuis votre appareil';
 
         this.selectedImage = PRESET_IMAGES[0];
-        this.selectedColor = PRESET_COLORS[0];
         this.renderImagePickerPresets();
-        this.renderColorPickerPresets();
+        this.renderColorPickerPresets(0);
 
         modal.classList.add('open');
     }
@@ -890,22 +1058,39 @@ class StephanieProApp {
 
         document.getElementById('serviceModalTitle').textContent = 'Modifier la prestation';
         document.getElementById('serviceName').value = s.name;
-        document.getElementById('serviceCategory').value = s.category;
-        document.getElementById('serviceDuration').value = s.duration;
         document.getElementById('servicePrice').value = s.price;
         document.getElementById('serviceDescription').value = s.description || '';
+        document.getElementById('serviceDuration').value = s.duration;
 
-        // Synchroniser les pills catégorie
-        document.querySelectorAll('#categoryPillsGroup .pill-option').forEach(p => {
-            if (p.getAttribute('data-value') === s.category) p.classList.add('active');
-            else p.classList.remove('active');
-        });
+        // Catégorie
+        this.renderCategoryPills(s.category);
 
-        // Synchroniser les pills durée
+        // Durée (standard ou personnalisée)
+        const stdDurations = ['30', '45', '60', '75', '90', '120'];
+        let matchedDuration = false;
         document.querySelectorAll('#durationPillsGroup .pill-option').forEach(p => {
-            if (Number(p.getAttribute('data-value')) === Number(s.duration)) p.classList.add('active');
-            else p.classList.remove('active');
+            if (p.getAttribute('data-value') === String(s.duration)) {
+                p.classList.add('active');
+                matchedDuration = true;
+            } else {
+                p.classList.remove('active');
+            }
         });
+
+        const customWrapper = document.getElementById('customDurationWrapper');
+        const customInput = document.getElementById('customDurationInput');
+        if (!matchedDuration) {
+            document.getElementById('pillCustomDuration')?.classList.add('active');
+            if (customWrapper) customWrapper.style.display = 'flex';
+            if (customInput) customInput.value = s.duration;
+        } else {
+            if (customWrapper) customWrapper.style.display = 'none';
+        }
+
+        // Couleur
+        let colorIdx = PRESET_COLORS.findIndex(c => c.border === s.colorBorder);
+        if (colorIdx === -1) colorIdx = 0;
+        this.renderColorPickerPresets(colorIdx);
 
         this.selectedImage = s.image || PRESET_IMAGES[0];
         modal.classList.add('open');
@@ -923,7 +1108,7 @@ class StephanieProApp {
 
     saveService() {
         const name = document.getElementById('serviceName').value.trim();
-        const category = document.getElementById('serviceCategory').value.trim();
+        const category = document.getElementById('serviceCategory').value.trim() || 'Massages';
         const duration = Number(document.getElementById('serviceDuration').value) || 60;
         const price = Number(document.getElementById('servicePrice').value) || 80;
         const description = document.getElementById('serviceDescription').value.trim();
@@ -986,13 +1171,70 @@ class StephanieProApp {
         this.populateServiceDropdown();
     }
 
-    openBlockSlotModal() {
+    /* GESTION ET MODIFICATION DES PAUSES ET CRÉNEAUX BLOQUÉS */
+    openBlockSlotModal(date = null, time = '12:00') {
+        this.editingBlockedSlotId = null;
         const modal = document.getElementById('modalBlockSlot');
         if (!modal) return;
-        document.getElementById('blockDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('blockTime').value = '12:00';
-        document.getElementById('blockDuration').value = '60';
+
+        document.getElementById('blockSlotTitleText').textContent = 'Bloquer un créneau';
+        document.getElementById('iconSubmitBlockSlot').className = 'fa-solid fa-lock';
+        document.getElementById('textSubmitBlockSlot').textContent = 'Bloquer ce créneau';
+        document.getElementById('btnDeleteBlockSlot').style.display = 'none';
+
         document.getElementById('blockReason').value = 'Pause déjeuner';
+        document.getElementById('blockDate').value = date || new Date().toISOString().split('T')[0];
+        document.getElementById('blockTime').value = time;
+        document.getElementById('blockDuration').value = '60';
+
+        document.querySelectorAll('#blockDurationPillsGroup .pill-option').forEach(p => {
+            if (p.getAttribute('data-value') === '60') p.classList.add('active');
+            else p.classList.remove('active');
+        });
+        const customWrapper = document.getElementById('customBlockDurationWrapper');
+        if (customWrapper) customWrapper.style.display = 'none';
+
+        modal.classList.add('open');
+    }
+
+    openBlockedDetails(id) {
+        const blk = this.data.blockedSlots.find(b => b.id === id);
+        if (!blk) return;
+
+        this.editingBlockedSlotId = id;
+        const modal = document.getElementById('modalBlockSlot');
+        if (!modal) return;
+
+        document.getElementById('blockSlotTitleText').textContent = 'Modifier l\'indisponibilité (Pause)';
+        document.getElementById('iconSubmitBlockSlot').className = 'fa-solid fa-check';
+        document.getElementById('textSubmitBlockSlot').textContent = 'Enregistrer les modifications';
+        document.getElementById('btnDeleteBlockSlot').style.display = 'inline-flex';
+
+        document.getElementById('blockReason').value = blk.reason || '';
+        document.getElementById('blockDate').value = blk.date;
+        document.getElementById('blockTime').value = blk.time;
+        document.getElementById('blockDuration').value = blk.duration;
+
+        let matched = false;
+        document.querySelectorAll('#blockDurationPillsGroup .pill-option').forEach(p => {
+            if (p.getAttribute('data-value') === String(blk.duration)) {
+                p.classList.add('active');
+                matched = true;
+            } else {
+                p.classList.remove('active');
+            }
+        });
+
+        const customWrapper = document.getElementById('customBlockDurationWrapper');
+        const customInput = document.getElementById('customBlockDurationInput');
+        if (!matched) {
+            document.getElementById('pillCustomBlockDuration')?.classList.add('active');
+            if (customWrapper) customWrapper.style.display = 'flex';
+            if (customInput) customInput.value = blk.duration;
+        } else {
+            if (customWrapper) customWrapper.style.display = 'none';
+        }
+
         modal.classList.add('open');
     }
 
@@ -1002,29 +1244,37 @@ class StephanieProApp {
         const duration = Number(document.getElementById('blockDuration').value) || 60;
         const reason = document.getElementById('blockReason').value.trim() || 'Indisponible';
 
-        this.data.blockedSlots.push({
-            id: 'block_' + Date.now(),
-            date,
-            time,
-            duration,
-            reason
-        });
+        if (this.editingBlockedSlotId) {
+            const blk = this.data.blockedSlots.find(b => b.id === this.editingBlockedSlotId);
+            if (blk) {
+                blk.date = date;
+                blk.time = time;
+                blk.duration = duration;
+                blk.reason = reason;
+                this.showToast('Indisponibilité mise à jour !', 'success');
+            }
+        } else {
+            this.data.blockedSlots.push({
+                id: 'block_' + Date.now(),
+                date,
+                time,
+                duration,
+                reason
+            });
+            this.showToast('Créneau indisponible bloqué sur votre planning.', 'success');
+        }
 
         this.saveData();
         document.getElementById('modalBlockSlot').classList.remove('open');
         if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
-        this.showToast('Créneau indisponible bloqué sur votre planning.', 'success');
     }
 
-    openBlockedDetails(id) {
-        const blk = this.data.blockedSlots.find(b => b.id === id);
-        if (!blk) return;
-        if (confirm(`Supprimer le blocage "${blk.reason}" du ${blk.date} à ${blk.time} pour réouvrir le créneau ?`)) {
-            this.data.blockedSlots = this.data.blockedSlots.filter(b => b.id !== id);
-            this.saveData();
-            if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
-            this.showToast('Créneau libéré.', 'success');
-        }
+    deleteBlockedSlot(id) {
+        this.data.blockedSlots = this.data.blockedSlots.filter(b => b.id !== id);
+        this.saveData();
+        document.getElementById('modalBlockSlot').classList.remove('open');
+        if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
+        this.showToast('Indisponibilité supprimée.', 'danger');
     }
 
     renderSettingsSchedule() {
