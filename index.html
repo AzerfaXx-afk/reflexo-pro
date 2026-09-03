@@ -61,15 +61,15 @@
                         <span>Clients</span>
                     </button>
                     <button class="nav-item" data-view="settings">
-                        <i class="fa-solid fa-sliders"></i>
-                        <span>Paramètres</span>
+                        <i class="fa-regular fa-clock"></i>
+                        <span>Horaires</span>
                     </button>
                 </nav>
             </div>
 
             <div class="sidebar-footer">
                 <div class="sidebar-footer-card-compact" id="sidebarFooterCard">
-                    <button type="button" class="footer-profile-btn" id="sidebarProfileTrigger" onclick="app.switchView('settings')" title="Paramètres & Profil">
+                    <button type="button" class="footer-profile-btn" id="sidebarProfileTrigger" onclick="app.handleProfileClick()" title="Mon Profil & Photo">
                         <i class="fa-regular fa-user" id="userAvatarIcon"></i>
                         <span class="avatar-initials-badge" id="userAvatarInitials" style="display: none;">SB</span>
                         <img id="userAvatarImg" class="avatar-photo-img" src="" alt="Photo de profil" style="display: none;">
@@ -113,14 +113,14 @@
                      ========================================================================= -->
                 <section id="view-dashboard" class="view-panel active">
                     
-                    <div class="dashboard-hero">
+                    <div class="dashboard-hero" onclick="app.handleProfileClick()" style="cursor: pointer;" title="Modifier mon profil & photo">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <div class="hero-avatar-wrapper" id="heroAvatarWrapper" style="display: none;">
                                 <img src="" id="heroAvatarImg" class="hero-avatar-img" alt="Photo de profil">
                             </div>
                             <div class="hero-greeting">
                                 <h1 id="dashboardGreeting">Bienvenue</h1>
-                                <p id="dashboardGreetingSub">Voici votre récapitulatif.</p>
+                                <p id="dashboardGreetingSub">Voici votre récapitulatif. <span style="font-size: 0.78rem; color: var(--primary); font-weight: 600; margin-left: 6px;"><i class="fa-solid fa-pen-to-square"></i> Modifier profil</span></p>
                             </div>
                         </div>
                     </div>
@@ -292,14 +292,14 @@
 
 
                 <!-- ========================================================================= 
-                     VUE 5 : PARAMÈTRES
+                     VUE 5 : HORAIRES DU CABINET
                      ========================================================================= -->
                 <section id="view-settings" class="view-panel">
                     
                     <div style="max-width: 680px; margin: 0 auto;">
-                        <h2 style="margin-bottom: 6px;">Paramètres & Cabinet</h2>
+                        <h2 style="margin-bottom: 6px;"><i class="fa-regular fa-clock" style="color: var(--primary); margin-right: 8px;"></i> Horaires & Disponibilités</h2>
                         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">
-                            Profil du praticien, disponibilités et temps de battement.
+                            Disponibilités du cabinet et temps de battement entre les séances.
                         </p>
 
                         <!-- Bloc 0: Profil & Photo du cabinet -->
@@ -394,12 +394,12 @@
                 <span>Clients</span>
             </a>
             <a href="#" class="mobile-nav-link" data-view="settings">
-                <i class="fa-solid fa-sliders"></i>
-                <span>Réglages</span>
+                <i class="fa-regular fa-clock"></i>
+                <span>Horaires</span>
             </a>
-            <a href="#" class="mobile-nav-link" id="mobileAccountLink" onclick="app.openAuthModal(); return false;">
+            <a href="#" class="mobile-nav-link" id="mobileAccountLink" onclick="app.handleProfileClick(); return false;">
                 <i class="fa-regular fa-circle-user"></i>
-                <span id="mobileAccountText">Compte</span>
+                <span id="mobileAccountText">Profil</span>
             </a>
         </nav>
 
@@ -817,6 +817,74 @@
 
 
     <!-- ========================================================================= 
+         MODAL PROFIL DU PRATICIEN & PHOTO (AWWWARDS STYLE)
+         ========================================================================= -->
+    <div class="modal-backdrop" id="modalProfileSettings">
+        <div class="modal-card" style="max-width: 460px; text-align: center; padding: 34px 28px; border-radius: 24px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25); position: relative;">
+            <button type="button" class="auth-close-btn" onclick="app.closeProfileModal()" title="Fermer" style="top: 18px; right: 18px;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-heading); margin-bottom: 6px;">
+                Profil du Praticien
+            </h3>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 24px;">
+                Personnalisez votre photo et votre prénom affichés dans le cabinet.
+            </p>
+
+            <!-- Grand Avatar Cliquable avec badge caméra -->
+            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <div class="modal-avatar-uploader" onclick="document.getElementById('modalProfilePhotoInput').click()" title="Cliquer pour changer la photo">
+                    <div class="modal-avatar-circle" id="modalProfileAvatarCircle">
+                        <i class="fa-regular fa-user" id="modalProfilePlaceholder" style="font-size: 2.5rem; color: var(--primary);"></i>
+                        <span id="modalProfileInitials" style="display: none; font-size: 2.2rem; font-weight: 700; color: var(--primary);">SB</span>
+                        <img id="modalProfileImg" class="modal-avatar-img" src="" alt="Photo de profil" style="display: none;">
+                    </div>
+                    <div class="modal-avatar-badge">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                </div>
+            </div>
+
+            <input type="file" id="modalProfilePhotoInput" accept="image/*" style="display: none;" onchange="app.handleProfilePhotoUpload(event)">
+
+            <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 22px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('modalProfilePhotoInput').click()">
+                    <i class="fa-solid fa-upload"></i> Changer la photo
+                </button>
+                <button type="button" class="btn btn-outline btn-sm text-danger" id="btnModalRemovePhoto" onclick="app.removeProfilePhoto()" style="display: none;">
+                    <i class="fa-regular fa-trash-can"></i> Retirer
+                </button>
+            </div>
+
+            <!-- Formulaire Prénom & Email -->
+            <div style="text-align: left; margin-bottom: 24px;">
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="modalInputPractitionerName" style="font-weight: 600; font-size: 0.84rem; color: var(--text-heading); margin-bottom: 6px;">Prénom affiché sur le tableau de bord</label>
+                    <div class="input-with-icon">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="modalInputPractitionerName" class="form-control" placeholder="Stéphanie">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.84rem; color: var(--text-muted); margin-bottom: 6px;">Email de connexion</label>
+                    <div class="input-with-icon">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="text" id="modalInputEmail" class="form-control" readonly style="background: var(--bg-light); color: var(--text-muted); cursor: not-allowed;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bouton Sauvegarder -->
+            <button type="button" class="btn btn-primary btn-block" onclick="app.saveProfileModal()" style="padding: 13px; font-weight: 600; font-size: 0.95rem; border-radius: 14px;">
+                <i class="fa-solid fa-check"></i> Enregistrer les modifications
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= 
          AUTHENTICATION OVERLAY (ESPACE PRIVÉ SÉCURISÉ)
          ========================================================================= -->
     <div class="auth-overlay hidden" id="authOverlay" style="display: none;">
@@ -893,6 +961,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
     <script src="js/calendar.js?v=3"></script>
-    <script src="js/app.js?v=5"></script>
+    <script src="js/app.js?v=6"></script>
 </body>
 </html>

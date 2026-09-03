@@ -2345,6 +2345,82 @@ class StephanieProApp {
                 heroAvatarWrapper.style.display = 'none';
             }
         }
+
+        // Modal Profile synchronization
+        const modalImg = document.getElementById('modalProfileImg');
+        const modalPlaceholder = document.getElementById('modalProfilePlaceholder');
+        const modalInitials = document.getElementById('modalProfileInitials');
+        const btnModalRemove = document.getElementById('btnModalRemovePhoto');
+        if (modalImg && modalPlaceholder) {
+            if (photo) {
+                modalImg.src = photo;
+                modalImg.style.display = 'block';
+                modalPlaceholder.style.display = 'none';
+                if (modalInitials) modalInitials.style.display = 'none';
+                if (btnModalRemove) btnModalRemove.style.display = 'inline-flex';
+            } else {
+                modalImg.style.display = 'none';
+                if (btnModalRemove) btnModalRemove.style.display = 'none';
+                if (this.currentUser) {
+                    if (modalInitials) {
+                        modalInitials.style.display = 'inline';
+                        modalInitials.textContent = (this.data.practitionerName || this.currentUser.email || 'S')[0].toUpperCase();
+                    }
+                    modalPlaceholder.style.display = 'none';
+                } else {
+                    if (modalInitials) modalInitials.style.display = 'none';
+                    modalPlaceholder.style.display = 'inline';
+                }
+            }
+        }
+    }
+
+    handleProfileClick() {
+        if (this.currentUser) {
+            this.openProfileModal();
+        } else {
+            this.openAuthModal();
+        }
+    }
+
+    openProfileModal() {
+        const modal = document.getElementById('modalProfileSettings');
+        if (!modal) return;
+        
+        const nameInput = document.getElementById('modalInputPractitionerName');
+        const emailInput = document.getElementById('modalInputEmail');
+        if (nameInput) {
+            nameInput.value = this.data.practitionerName || (this.currentUser?.email ? this.currentUser.email.split('@')[0] : 'Stéphanie');
+        }
+        if (emailInput && this.currentUser) {
+            emailInput.value = this.currentUser.email || '';
+        }
+        
+        this.updateProfileUI();
+        modal.classList.add('open');
+    }
+
+    closeProfileModal() {
+        const modal = document.getElementById('modalProfileSettings');
+        if (!modal) return;
+        modal.classList.remove('open');
+    }
+
+    saveProfileModal() {
+        const nameInput = document.getElementById('modalInputPractitionerName');
+        if (nameInput) {
+            this.data.practitionerName = nameInput.value.trim();
+        }
+        this.saveData();
+        this.updateProfileUI();
+        if (this.currentUser) {
+            window.supabaseService?.saveSettings({
+                profilePhoto: this.data.profilePhoto || '',
+                practitionerName: this.data.practitionerName || ''
+            });
+        }
+        this.closeProfileModal();
+        this.showToast('Profil et photo enregistrés avec succès !', 'success');
     }
 
     showToast(message, type = 'success') {
