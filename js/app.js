@@ -487,32 +487,36 @@ class StephanieProApp {
 
                 if (authMode === 'register') {
                     const res = await window.supabaseService.signUp(email, password);
-                    
-                    if (res?.session) {
-                        this.currentUser = res.session.user;
+                    let sessionUser = res?.session?.user || res?.user;
+
+                    // Auto-connexion immédiate
+                    if (!res?.session) {
+                        try {
+                            const loginRes = await window.supabaseService.signInWithPassword(email, password);
+                            sessionUser = loginRes?.user || sessionUser;
+                        } catch (e) {
+                            console.log('Immediate login attempt:', e);
+                        }
+                    }
+
+                    if (sessionUser) {
+                        this.currentUser = sessionUser;
                         localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
                         this.data = this.loadData();
-                        this.showToast('Compte cabinet créé et connecté !', 'success');
+                        this.showToast('Compte cabinet créé avec succès ! Bienvenue.', 'success');
                         this.closeAuthModal();
                         await checkSession();
                         this.syncWithSupabase();
                     } else {
-                        alertBox.className = 'auth-alert success';
-                        alertBox.innerHTML = `
-                            <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; padding: 4px 0;">
-                                <div style="font-weight: 700; font-size: 0.95rem; color: #166534;">
-                                    <i class="fa-regular fa-envelope-open" style="margin-right: 6px;"></i> Email de confirmation envoyé !
-                                </div>
-                                <div style="font-size: 0.84rem; line-height: 1.45; color: #15803d;">
-                                    Un lien d'activation sécurisé a été envoyé à <strong>${email}</strong>.<br>
-                                    Veuillez ouvrir votre boîte mail et cliquer sur le lien pour valider et accéder à votre espace cabinet Reflexo Pro.
-                                </div>
-                            </div>
-                        `;
-                        alertBox.style.display = 'flex';
-                        this.showToast('Email de confirmation envoyé ! Vérifiez votre boîte mail.', 'info');
-                        const passField = document.getElementById('authPassword');
-                        if (passField) passField.value = '';
+                        tabLogin?.click();
+                        const loginRes = await window.supabaseService.signInWithPassword(email, password);
+                        this.currentUser = loginRes.user;
+                        localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
+                        this.data = this.loadData();
+                        this.showToast(`Bienvenue dans votre cabinet (${email})`, 'success');
+                        this.closeAuthModal();
+                        await checkSession();
+                        this.syncWithSupabase();
                     }
                 } else {
                     const res = await window.supabaseService.signInWithPassword(email, password);
