@@ -196,6 +196,12 @@ class StephanieProApp {
                 console.error('Error loading data', e);
             }
         }
+
+        // Si aucun RDV n'est chargé et qu'on n'a pas explicitement vidé le test : charger automatiquement les 490 RDV Cfixé !
+        if (data.appointments.length === 0 && !localStorage.getItem('cfixe_cleared') && window.CFIXE_IMPORT_DATA) {
+            data.appointments = [...(window.CFIXE_IMPORT_DATA.appointments || [])];
+            data.clients = [...(window.CFIXE_IMPORT_DATA.clients || [])];
+        }
         
         return data;
     }
@@ -1881,6 +1887,39 @@ class StephanieProApp {
         } else {
             this.showToast('Mode Test : paramètres enregistrés localement', 'info');
         }
+    }
+
+    importCfixeData(showToast = true) {
+        if (!window.CFIXE_IMPORT_DATA) {
+            this.showToast('Données Cfixé non disponibles', 'error');
+            return;
+        }
+        localStorage.removeItem('cfixe_cleared');
+        this.data.appointments = [...(window.CFIXE_IMPORT_DATA.appointments || [])];
+        this.data.clients = [...(window.CFIXE_IMPORT_DATA.clients || [])];
+        this.saveData();
+        if (this.currentUser) {
+            window.supabaseService?.saveAppointments(this.data.appointments);
+            window.supabaseService?.saveClients(this.data.clients);
+        }
+        this.renderAll();
+        if (showToast) {
+            this.showToast(`✨ ${this.data.appointments.length} rendez-vous et ${this.data.clients.length} clients Cfixé chargés !`, 'success');
+        }
+    }
+
+    clearTestData() {
+        if (!confirm('Voulez-vous vider tous les rendez-vous et clients de test pour remettre votre agenda vierge ?')) return;
+        this.data.appointments = [];
+        this.data.clients = [];
+        localStorage.setItem('cfixe_cleared', 'true');
+        this.saveData();
+        if (this.currentUser) {
+            window.supabaseService?.saveAppointments([]);
+            window.supabaseService?.saveClients([]);
+        }
+        this.renderAll();
+        this.showToast('Données de test effacées. Agenda vierge.', 'info');
     }
 
     showToast(message, type = 'success') {
