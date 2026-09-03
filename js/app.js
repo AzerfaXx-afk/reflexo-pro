@@ -2576,20 +2576,38 @@ class StephanieProApp {
         const container = document.getElementById('toastContainer');
         if (!container) return;
 
+        const iconMap = {
+            success: 'fa-circle-check',
+            info: 'fa-circle-info',
+            warning: 'fa-triangle-exclamation',
+            error: 'fa-circle-exclamation',
+            danger: 'fa-circle-exclamation'
+        };
+        const iconClass = iconMap[type] || 'fa-circle-check';
+
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
+        toast.setAttribute('role', 'alert');
+        toast.title = 'Cliquer pour fermer';
+        toast.onclick = () => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-12px) scale(0.95)';
+            setTimeout(() => toast.remove(), 250);
+        };
         toast.innerHTML = `
-            <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+            <i class="fa-solid ${iconClass}"></i>
             <span>${message}</span>
         `;
         container.appendChild(toast);
 
         setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(10px)';
-            toast.style.transition = 'all 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
+            if (toast.parentElement) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-12px) scale(0.95)';
+                toast.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 3200);
     }
 
     async importCfixeData() {

@@ -1357,39 +1357,85 @@ input, select, textarea {
     object-fit: cover;
 }
 
-/* TOAST NOTIFICATION */
+/* TOAST NOTIFICATION (AWWWARDS FLOATING TOP DYNAMIC PILL) */
 .toast-container {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 10000;
+    top: calc(18px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
     pointer-events: none;
+    width: 100%;
+    max-width: 500px;
+    padding: 0 16px;
 }
 
 .toast {
-    background: #1F383E;
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    font-size: 0.88rem;
+    background: rgba(23, 37, 42, 0.94);
+    color: #F8FAFC;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 9px 20px;
+    border-radius: 9999px;
+    box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 0.84rem;
     font-weight: 500;
-    display: flex;
+    letter-spacing: -0.01em;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
-    animation: toastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: toastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    max-width: 92vw;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.toast.toast-success { background: #2E7D32; }
-.toast.toast-danger { background: #C62828; }
+.toast:hover {
+    transform: scale(1.02);
+}
 
-@keyframes toastSlideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+.toast i {
+    font-size: 0.92rem;
+    flex-shrink: 0;
+}
+
+.toast.toast-success i {
+    color: #34D399;
+    filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.5));
+}
+
+.toast.toast-info i {
+    color: #38BDF8;
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.5));
+}
+
+.toast.toast-warning i {
+    color: #FBBF24;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
+}
+
+.toast.toast-danger i,
+.toast.toast-error i {
+    color: #F87171;
+    filter: drop-shadow(0 0 8px rgba(248, 113, 113, 0.5));
+}
+
+@keyframes toastSlideDown {
+    from {
+        transform: translateY(-24px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
 }
 
 /* BOTTOM NAVIGATION (Mobile Seul) */
