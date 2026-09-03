@@ -655,6 +655,7 @@ class StephanieProApp {
                             if (freshState.profilePhoto) this.data.profilePhoto = freshState.profilePhoto;
                             if (freshState.practitionerName) this.data.practitionerName = freshState.practitionerName;
                             if (freshState.cabinetInfo) this.data.cabinetInfo = freshState.cabinetInfo;
+                            if (freshState.icalUrl) this.data.icalUrl = freshState.icalUrl;
 
                             this.saveData();
                             this.renderAll();
@@ -679,6 +680,7 @@ class StephanieProApp {
                     if (cloudState.profilePhoto) this.data.profilePhoto = cloudState.profilePhoto;
                     if (cloudState.practitionerName) this.data.practitionerName = cloudState.practitionerName;
                     if (cloudState.cabinetInfo) this.data.cabinetInfo = cloudState.cabinetInfo;
+                    if (cloudState.icalUrl) this.data.icalUrl = cloudState.icalUrl;
 
                     this.saveData();
                     this.renderAll();
@@ -2237,7 +2239,8 @@ class StephanieProApp {
             bufferTime: this.data.bufferTime !== undefined ? this.data.bufferTime : 15,
             schedule: this.data.schedule,
             profilePhoto: this.data.profilePhoto || '',
-            practitionerName: this.data.practitionerName || ''
+            practitionerName: this.data.practitionerName || '',
+            icalUrl: this.data.icalUrl || ''
         });
     }
 
@@ -2464,15 +2467,31 @@ class StephanieProApp {
         
         const nameInput = document.getElementById('modalInputPractitionerName');
         const emailInput = document.getElementById('modalInputEmail');
+        const icalInput = document.getElementById('modalInputIcalUrl');
+        const syncActionBox = document.getElementById('profileSyncActionBox');
+
         if (nameInput) {
             nameInput.value = this.data.practitionerName || (this.currentUser?.email ? this.currentUser.email.split('@')[0] : 'Stéphanie');
         }
         if (emailInput && this.currentUser) {
             emailInput.value = this.currentUser.email || '';
         }
+        if (icalInput) {
+            icalInput.value = this.data.icalUrl || '';
+            if (syncActionBox) {
+                syncActionBox.style.display = (this.data.icalUrl && this.data.icalUrl.trim().length > 5) ? 'block' : 'none';
+            }
+        }
         
         this.updateProfileUI();
         modal.classList.add('open');
+    }
+
+    handleIcalInput(val) {
+        const syncActionBox = document.getElementById('profileSyncActionBox');
+        if (syncActionBox) {
+            syncActionBox.style.display = (val && val.trim().length > 5) ? 'block' : 'none';
+        }
     }
 
     closeProfileModal() {
@@ -2486,16 +2505,71 @@ class StephanieProApp {
         if (nameInput) {
             this.data.practitionerName = nameInput.value.trim();
         }
+        const icalInput = document.getElementById('modalInputIcalUrl');
+        if (icalInput) {
+            this.data.icalUrl = icalInput.value.trim();
+        }
         this.saveData();
         this.updateProfileUI();
         if (this.currentUser) {
             window.supabaseService?.saveSettings({
                 profilePhoto: this.data.profilePhoto || '',
-                practitionerName: this.data.practitionerName || ''
+                practitionerName: this.data.practitionerName || '',
+                icalUrl: this.data.icalUrl || ''
             });
         }
         this.closeProfileModal();
-        this.showToast('Profil et photo enregistrés avec succès !', 'success');
+        this.showToast('Profil et paramètres enregistrés avec succès !', 'success');
+    }
+
+    async syncIcalFromProfile() {
+        if (!this.currentUser) {
+            this.showToast('Veuillez vous connecter pour synchroniser votre agenda.', 'warning');
+            return;
+        }
+
+        const icalInput = document.getElementById('modalInputIcalUrl');
+        const url = icalInput ? icalInput.value.trim() : (this.data.icalUrl || '');
+
+        if (!url) {
+            this.showToast('Veuillez coller votre lien iCal avant de synchroniser.', 'warning');
+            return;
+        }
+
+        this.data.icalUrl = url;
+        this.saveData();
+        if (this.currentUser) {
+            window.supabaseService?.saveSettings({ icalUrl: url });
+        }
+
+        const btn = document.getElementById('btnSyncProfileIcal');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Synchronisation en cours...';
+        }
+
+        try {
+            await this.importCfixeData();
+            this.showToast('Agenda synchronisé avec succès sur votre compte !', 'success');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Rendez-vous synchronisés';
+                btn.style.borderColor = '#10B981';
+                btn.style.color = '#10B981';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> <span>Synchroniser / Importer les rendez-vous</span>';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }, 3500);
+            }
+        } catch (err) {
+            console.error('Sync error:', err);
+            this.showToast('Erreur : ' + err.message, 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> <span>Réessayer la synchronisation</span>';
+            }
+        }
     }
 
     showToast(message, type = 'success') {

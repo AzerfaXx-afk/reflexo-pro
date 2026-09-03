@@ -119,11 +119,13 @@ class SupabaseService {
             let profilePhoto = '';
             let practitionerName = '';
             let cabinetInfo = null;
+            let icalUrl = '';
             if (settingsRes.data) {
                 if (settingsRes.data.schedule) schedule = settingsRes.data.schedule;
                 if (settingsRes.data.buffer_time !== undefined) bufferTime = settingsRes.data.buffer_time;
                 if (settingsRes.data.profile_photo) profilePhoto = settingsRes.data.profile_photo;
                 if (settingsRes.data.practitioner_name) practitionerName = settingsRes.data.practitioner_name;
+                if (settingsRes.data.ical_url) icalUrl = settingsRes.data.ical_url;
                 cabinetInfo = {
                     address: settingsRes.data.address || '',
                     phone: settingsRes.data.phone || '',
@@ -140,7 +142,8 @@ class SupabaseService {
                 bufferTime,
                 profilePhoto,
                 practitionerName,
-                cabinetInfo
+                cabinetInfo,
+                icalUrl
             };
         } catch (err) {
             console.error('Erreur lors du chargement Supabase:', err);
@@ -271,7 +274,7 @@ class SupabaseService {
     }
 
     /* PARAMÈTRES ET PROFIL */
-    async saveSettings({ address, phone, email, bufferTime, schedule, profilePhoto, practitionerName }) {
+    async saveSettings({ address, phone, email, bufferTime, schedule, profilePhoto, practitionerName, icalUrl }) {
         if (!this.client) return;
         try {
             const user = (await this.client.auth.getUser())?.data?.user;
@@ -289,6 +292,7 @@ class SupabaseService {
             if (schedule !== undefined) updatePayload.schedule = schedule;
             if (profilePhoto !== undefined && profilePhoto !== null) updatePayload.profile_photo = profilePhoto;
             if (practitionerName !== undefined && practitionerName !== null) updatePayload.practitioner_name = practitionerName;
+            if (icalUrl !== undefined && icalUrl !== null) updatePayload.ical_url = icalUrl;
 
             const { error } = await this.client.from('cabinet_settings').upsert(updatePayload, { onConflict: 'user_id' });
             if (error) {
