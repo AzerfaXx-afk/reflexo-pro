@@ -239,6 +239,7 @@ class StephanieProApp {
     }
 
     closeAuthModal() {
+        if (!this.currentUser) return; // Sécurité : verrouillé tant qu'on n'est pas connecté
         const overlay = document.getElementById('authOverlay');
         if (!overlay) return;
         overlay.classList.add('hidden');
@@ -332,6 +333,8 @@ class StephanieProApp {
                 if (overlay) {
                     overlay.classList.add('hidden');
                     setTimeout(() => overlay.style.display = 'none', 400);
+                    const closeBtn = overlay.querySelector('.auth-close-btn');
+                    if (closeBtn) closeBtn.style.display = 'block';
                 }
                 if (avatarIcon) avatarIcon.style.display = 'none';
                 if (avatarInitials) {
@@ -344,13 +347,26 @@ class StephanieProApp {
                 if (mobileAccountText) mobileAccountText.textContent = 'Cabinet';
             } else {
                 this.currentUser = null;
+                // Sécurité stricte : application 100% vierge, aucune donnée en mémoire
+                this.data.appointments = [];
+                this.data.clients = [];
+                this.data.blockedSlots = [];
+                
+                // Afficher l'écran d'authentification obligatoire
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    overlay.classList.remove('hidden');
+                    const closeBtn = overlay.querySelector('.auth-close-btn');
+                    if (closeBtn) closeBtn.style.display = 'none'; // Verrouillé tant qu'on n'est pas connecté
+                }
+
                 if (avatarIcon) avatarIcon.style.display = 'inline';
                 if (avatarInitials) avatarInitials.style.display = 'none';
                 if (btnLogin) btnLogin.style.display = 'flex';
                 if (btnLogout) btnLogout.style.display = 'none';
                 if (mobileAccountText) mobileAccountText.textContent = 'Connexion';
             }
-            this.renderDashboard();
+            this.renderAll();
         };
 
         await checkSession();
@@ -2096,42 +2112,7 @@ class StephanieProApp {
         }
     }
 
-    importCfixeData(showToast = true) {
-        if (!window.CFIXE_IMPORT_DATA) {
-            this.showToast('Données Cfixé non disponibles', 'error');
-            return;
-        }
-        localStorage.removeItem('cfixe_cleared');
-        this.data.appointments = [...(window.CFIXE_IMPORT_DATA.appointments || [])];
-        this.data.clients = [...(window.CFIXE_IMPORT_DATA.clients || [])];
-        if (window.CFIXE_IMPORT_DATA.services) {
-            this.data.services = [...window.CFIXE_IMPORT_DATA.services];
-        }
-        this.saveData();
-        if (this.currentUser) {
-            window.supabaseService?.saveAppointments(this.data.appointments);
-            window.supabaseService?.saveClients(this.data.clients);
-            window.supabaseService?.saveServices(this.data.services);
-        }
-        this.renderAll();
-        if (showToast) {
-            this.showToast(`✨ ${this.data.appointments.length} RDV, ${this.data.clients.length} clients et 6 soins Cfixé chargés !`, 'success');
-        }
-    }
 
-    clearTestData() {
-        if (!confirm('Voulez-vous vider tous les rendez-vous et clients de test pour remettre votre agenda vierge ?')) return;
-        this.data.appointments = [];
-        this.data.clients = [];
-        localStorage.setItem('cfixe_cleared', 'true');
-        this.saveData();
-        if (this.currentUser) {
-            window.supabaseService?.saveAppointments([]);
-            window.supabaseService?.saveClients([]);
-        }
-        this.renderAll();
-        this.showToast('Données de test effacées. Agenda vierge.', 'info');
-    }
 
     showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
