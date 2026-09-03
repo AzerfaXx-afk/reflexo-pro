@@ -1106,7 +1106,9 @@ input, select, textarea {
     border: var(--border-subtle);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .clients-table {
@@ -1606,11 +1608,13 @@ input, select, textarea {
     }
 
     /* ───── SETTINGS PAGE ───── */
-    .settings-content h2 {
+    .settings-content h2,
+    #view-settings h2 {
         font-size: 1.3rem;
     }
 
-    .settings-content > p {
+    .settings-content > p,
+    #view-settings > div > p {
         font-size: 0.82rem;
     }
 
@@ -1621,6 +1625,50 @@ input, select, textarea {
     .pill-option {
         padding: 7px 12px;
         font-size: 0.78rem;
+    }
+
+    /* ───── TOP HEADER: HIDDEN ON MOBILE ───── */
+    .top-header {
+        display: none;
+    }
+
+    /* ───── CLIENTS TABLE: SWIPEABLE ───── */
+    .clients-topbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .clients-topbar h2 {
+        font-size: 1.3rem;
+    }
+
+    .clients-table-container {
+        border-radius: 14px;
+    }
+
+    .clients-table {
+        min-width: 600px;
+    }
+
+    .clients-table th {
+        padding: 10px 14px;
+        font-size: 0.72rem;
+        white-space: nowrap;
+    }
+
+    .clients-table td {
+        padding: 10px 14px;
+        font-size: 0.82rem;
+        white-space: nowrap;
+    }
+
+    /* ───── CATALOGUE EMPTY STATE ───── */
+    .empty-state h3 {
+        font-size: 1.2rem !important;
+    }
+
+    .empty-state p {
+        font-size: 0.85rem;
     }
 }
 

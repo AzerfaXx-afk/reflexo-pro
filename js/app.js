@@ -768,7 +768,7 @@ class StephanieProApp {
                     <div class="empty-state">
                         <div class="empty-state-icon"><i class="fa-regular fa-calendar-check"></i></div>
                         <h4>Aucun rendez-vous aujourd'hui</h4>
-                        <p>Profitez de votre journée ou notez un rendez-vous si une cliente vous contacte.</p>
+                        <p>Profitez de votre journée ou notez un rendez-vous si un client vous contacte.</p>
                         <button class="btn btn-outline btn-sm" onclick="app.openNewAppointmentModal('${todayIso}', '10:00')">
                             <i class="fa-solid fa-plus"></i> Ajouter un RDV
                         </button>
@@ -920,7 +920,7 @@ class StephanieProApp {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                        ${filterQuery ? 'Aucun client ne correspond à votre recherche.' : 'Aucun client enregistré pour l’instant. Vos clientes s’ajouteront automatiquement à chaque prise de rendez-vous.'}
+                        ${filterQuery ? 'Aucun client ne correspond à votre recherche.' : 'Aucun client enregistré pour l\'instant. Vos clients s\'ajouteront automatiquement à chaque prise de rendez-vous.'}
                     </td>
                 </tr>
             `;
@@ -1338,7 +1338,7 @@ class StephanieProApp {
         const notes = document.getElementById('apptNotes').value.trim();
 
         if (!clientName) {
-            alert('Veuillez renseigner le nom de la cliente.');
+            alert('Veuillez renseigner le nom du client.');
             return;
         }
 
