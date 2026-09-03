@@ -262,15 +262,15 @@ const AUTHENTIC_SERVICES = [
         description: 'Soin complet associant le Kobido traditionnel à des manœuvres ciblées du décolleté et du crâne.'
     },
     {
-        id: 'srv_forfait_massages_60',
-        name: 'Forfait Massages : 5 séances 60 min + 1 Offerte',
+        id: 'srv_forfait_massages_90',
+        name: 'Forfait massages : 5 séances 90 minutes +1 offerte',
         category: 'Massages',
-        duration: 60,
-        price: 400,
-        colorBg: '#FFF8E1',
-        colorBorder: '#FFB300', // Or / Ambre
-        colorText: '#B57900',
-        description: '5 massages suédois d’une heure et pour prolonger l’expérience… le 6ᵉ massage vous est offert.'
+        duration: 90,
+        price: 500,
+        colorBg: '#E0F2F1',
+        colorBorder: '#00897B', // Sarcelle profond
+        colorText: '#004D40',
+        description: '5 séances prestige de 90 minutes + 1 offerte pour un bien-être durable.'
     },
     {
         id: 'srv_duo_valentin',
@@ -284,15 +284,15 @@ const AUTHENTIC_SERVICES = [
         description: 'Offre duo spéciale pour partager un instant de complicité et de profonde relaxation.'
     },
     {
-        id: 'srv_forfait_massages_90',
-        name: 'Forfait massages : 5 séances 90 minutes +1 offerte',
+        id: 'srv_forfait_massages_60',
+        name: 'Forfait Massages : 5 séances 60 min + 1 Offerte',
         category: 'Massages',
-        duration: 90,
-        price: 500,
-        colorBg: '#E0F2F1',
-        colorBorder: '#00897B', // Sarcelle profond
-        colorText: '#004D40',
-        description: '5 séances prestige de 90 minutes + 1 offerte pour un bien-être durable.'
+        duration: 60,
+        price: 400,
+        colorBg: '#FFF8E1',
+        colorBorder: '#FFB300', // Or / Ambre
+        colorText: '#B57900',
+        description: '5 massages suédois d’une heure et pour prolonger l’expérience… le 6ᵉ massage vous est offert.'
     },
 
     // 3 Réflexologies
@@ -348,8 +348,15 @@ class StephanieProApp {
         this.catalogueTab = 'services';
         this.catalogueCategory = 'all';
 
-        // Les 10 Packs Cadeaux officiels (Screenshot 4)
-        this.giftPacks = [
+        this.packDraftItems = [];
+        this.editingPackId = null;
+        this.giftPacks = this.loadPacks();
+
+        this.init();
+    }
+
+    loadPacks() {
+        const defaultPacks = [
             {
                 id: 'pack_1',
                 title: 'Pack cadeau forfait Massage Suédois : 5 séances 60 min +1 offerte',
@@ -412,7 +419,20 @@ class StephanieProApp {
             }
         ];
 
-        this.init();
+        try {
+            const saved = localStorage.getItem('reflexo_pro_packs');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        } catch (e) {}
+        return defaultPacks;
+    }
+
+    savePacks() {
+        try {
+            localStorage.setItem('reflexo_pro_packs', JSON.stringify(this.giftPacks));
+        } catch (e) {}
     }
 
     getStorageKey() {
@@ -449,13 +469,25 @@ class StephanieProApp {
             }
         }
 
+        // Nettoyer les faux soins ou doublons résiduels de test
+        const STALE_IDS = ['srv_refl_plant', 'srv_suedois_1h30', 'srv_suedois_1h', 'srv_combine_1h30', 'srv_chineitsang', 'srv_kobido'];
+        const seenNames = new Set();
+        data.services = (data.services || [])
+            .filter(s => !STALE_IDS.includes(s.id))
+            .filter(s => {
+                const norm = (s.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+                if (seenNames.has(norm)) return false;
+                seenNames.add(norm);
+                return true;
+            });
+
         // Toujours initialiser avec les 15 soins authentiques de Stéphanie Bouteloup
         if (!data.services || data.services.length === 0) {
             data.services = JSON.parse(JSON.stringify(AUTHENTIC_SERVICES));
         } else {
-            // S'assurer que les 15 soins authentiques de Stéphanie Bouteloup sont bien présents
             AUTHENTIC_SERVICES.forEach(authSrv => {
-                const exists = data.services.some(s => s.name.toLowerCase().trim() === authSrv.name.toLowerCase().trim());
+                const normAuth = authSrv.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                const exists = data.services.some(s => (s.name || '').toLowerCase().replace(/\s+/g, ' ').trim() === normAuth);
                 if (!exists) {
                     data.services.push({ ...authSrv });
                 }
@@ -1430,7 +1462,21 @@ class StephanieProApp {
         document.querySelectorAll('.cat-tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tab);
         });
+
+        // Adapter le bouton + Ajouter selon l'onglet actif
+        const addText = document.getElementById('btnCatalogueAddText');
+        if (addText) {
+            addText.textContent = tab === 'packs' ? '+ Ajouter un pack' : '+ Ajouter un soin';
+        }
         this.renderCatalogue();
+    }
+
+    onCatalogueAddBtnClicked() {
+        if (this.catalogueTab === 'packs') {
+            this.openNewPackModal();
+        } else {
+            this.openNewServiceModal();
+        }
     }
 
     setCatalogueCategory(cat) {
@@ -1449,26 +1495,144 @@ class StephanieProApp {
         this.renderCatalogue();
     }
 
-    editPack(id) {
+    /* GESTION AVANCÉE DES PACKS & COMPOSITIONS (MODAL AWWWARDS) */
+    populatePackServiceSelector() {
+        const selector = document.getElementById('packServiceSelector');
+        if (!selector) return;
+        selector.innerHTML = (this.data.services || []).map(s => `
+            <option value="${s.name}">${s.name} (${s.duration} min - ${s.price} €)</option>
+        `).join('');
+    }
+
+    openNewPackModal() {
+        this.editingPackId = null;
+        this.packDraftItems = [];
+        this.populatePackServiceSelector();
+
+        const modal = document.getElementById('modalNewPack');
+        if (!modal) return;
+
+        document.getElementById('packModalTitle').textContent = 'Nouveau Pack / Forfait';
+        document.getElementById('packName').value = '';
+        document.getElementById('packPrice').value = '';
+        document.getElementById('btnDeletePackInModal').style.display = 'none';
+        document.getElementById('btnSubmitPackText').textContent = 'Créer ce pack';
+
+        this.renderPackDraftPills();
+        modal.classList.add('open');
+    }
+
+    openEditPackModal(id) {
         const pack = this.giftPacks.find(p => p.id === id);
         if (!pack) return;
-        const newTitle = prompt('Nom du pack cadeau :', pack.title);
-        if (!newTitle) return;
-        const newPrice = prompt('Tarif du pack (€) :', pack.price);
-        if (newPrice) {
-            pack.title = newTitle;
-            pack.price = Number(newPrice) || pack.price;
-            this.renderCatalogue();
-            this.showToast('Pack cadeau modifié avec succès !', 'success');
+
+        this.editingPackId = id;
+        this.packDraftItems = [...(pack.items || [])];
+        this.populatePackServiceSelector();
+
+        const modal = document.getElementById('modalNewPack');
+        if (!modal) return;
+
+        document.getElementById('packModalTitle').textContent = 'Modifier le pack';
+        document.getElementById('packName').value = pack.title;
+        document.getElementById('packPrice').value = pack.price;
+        document.getElementById('btnDeletePackInModal').style.display = 'inline-flex';
+        document.getElementById('btnSubmitPackText').textContent = 'Enregistrer les modifications';
+
+        this.renderPackDraftPills();
+        modal.classList.add('open');
+    }
+
+    addPrestationToPackBuilder() {
+        const selector = document.getElementById('packServiceSelector');
+        const qtySelector = document.getElementById('packServiceQty');
+        if (!selector || !qtySelector) return;
+
+        const srvName = selector.value;
+        const qty = qtySelector.value;
+        if (!srvName) return;
+
+        this.packDraftItems.push(`x${qty} - ${srvName}`);
+        this.renderPackDraftPills();
+    }
+
+    removePrestationFromPackDraft(index) {
+        this.packDraftItems.splice(index, 1);
+        this.renderPackDraftPills();
+    }
+
+    renderPackDraftPills() {
+        const container = document.getElementById('packCompositionPillsContainer');
+        if (!container) return;
+
+        if (this.packDraftItems.length === 0) {
+            container.innerHTML = `
+                <span style="color: var(--text-muted); font-size: 0.82rem; font-style: italic;">
+                    Aucune prestation ajoutée. Choisissez une prestation et cliquez sur "Ajouter".
+                </span>
+            `;
+            return;
+        }
+
+        container.innerHTML = this.packDraftItems.map((it, idx) => `
+            <span class="cfixe-pack-pill" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 0.82rem;">
+                <span>${it}</span>
+                <button type="button" onclick="app.removePrestationFromPackDraft(${idx})" style="background: none; border: none; cursor: pointer; color: #5F9EA0; font-weight: 700; font-size: 1.05rem; line-height: 1; padding: 0 2px;" title="Retirer">&times;</button>
+            </span>
+        `).join('');
+    }
+
+    savePack() {
+        const name = document.getElementById('packName').value.trim();
+        const price = Number(document.getElementById('packPrice').value);
+
+        if (!name) {
+            this.showToast('Veuillez renseigner un nom de pack.', 'danger');
+            return;
+        }
+        if (!price || isNaN(price) || price <= 0) {
+            this.showToast('Veuillez renseigner un tarif valide.', 'danger');
+            return;
+        }
+
+        if (this.editingPackId) {
+            const pack = this.giftPacks.find(p => p.id === this.editingPackId);
+            if (pack) {
+                pack.title = name;
+                pack.price = price;
+                pack.items = [...this.packDraftItems];
+            }
+            this.showToast('✨ Pack modifié avec succès !', 'success');
+        } else {
+            const newPack = {
+                id: 'pack_' + Date.now(),
+                title: name,
+                price: price,
+                items: [...this.packDraftItems]
+            };
+            this.giftPacks.push(newPack);
+            this.showToast('✨ Nouveau pack ajouté au catalogue !', 'success');
+        }
+
+        this.savePacks();
+        document.getElementById('modalNewPack')?.classList.remove('open');
+        this.renderCatalogue();
+    }
+
+    deleteCurrentEditingPack() {
+        if (this.editingPackId) {
+            this.deletePack(this.editingPackId);
+            document.getElementById('modalNewPack')?.classList.remove('open');
         }
     }
 
     deletePack(id) {
-        if (confirm('Voulez-vous supprimer ce pack du catalogue ?')) {
-            this.giftPacks = this.giftPacks.filter(p => p.id !== id);
-            this.renderCatalogue();
-            this.showToast('Pack supprimé avec succès', 'info');
-        }
+        const p = this.giftPacks.find(pk => pk.id === id);
+        const name = p ? p.title : 'ce pack';
+        this.giftPacks = this.giftPacks.filter(pk => pk.id !== id);
+        this.savePacks();
+        this.renderCatalogue();
+        this.showToast(`Pack "${name}" supprimé du catalogue.`, 'info');
     }
 
     /* ========================================================================= 
@@ -1486,7 +1650,7 @@ class StephanieProApp {
 
         if (chipsContainer) chipsContainer.style.display = 'none';
 
-        // VUE TAB 1 : PRESTATIONS (ACCORDÉONS SCREENSHOTS 1 & 3)
+        // VUE TAB 1 : PRESTATIONS (ACCORDÉONS ORDONNÉS RIGOUREUSEMENT)
         if (this.catalogueTab === 'services') {
             const massages = this.data.services.filter(s => 
                 !((s.category || '').toLowerCase().includes('réflexo') || (s.category || '').toLowerCase().includes('reflexo'))
@@ -1494,6 +1658,24 @@ class StephanieProApp {
             const reflexo = this.data.services.filter(s => 
                 (s.category || '').toLowerCase().includes('réflexo') || (s.category || '').toLowerCase().includes('reflexo')
             );
+
+            // Tri exact selon l'ordre officiel demandé
+            const serviceOrderMap = {};
+            AUTHENTIC_SERVICES.forEach((s, idx) => {
+                const norm = s.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                serviceOrderMap[norm] = idx;
+            });
+
+            const sortByIndex = (a, b) => {
+                const normA = (a.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+                const normB = (b.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+                const idxA = serviceOrderMap[normA] !== undefined ? serviceOrderMap[normA] : 999;
+                const idxB = serviceOrderMap[normB] !== undefined ? serviceOrderMap[normB] : 999;
+                return idxA - idxB;
+            };
+
+            massages.sort(sortByIndex);
+            reflexo.sort(sortByIndex);
 
             const isMassagesOpen = this.openAccordionCats['Massages'] !== false;
             const isReflexoOpen = this.openAccordionCats['Réflexologie'] !== false;
@@ -1572,7 +1754,7 @@ class StephanieProApp {
             return;
         }
 
-        // VUE TAB 2 : PACKS CADEAUX & FORFAITS (SCREENSHOT 4)
+        // VUE TAB 2 : PACKS CADEAUX & FORFAITS
         if (this.catalogueTab === 'packs') {
             container.innerHTML = `
                 <div class="cfixe-pro-packs-list">
@@ -1586,60 +1768,17 @@ class StephanieProApp {
                             </div>
                             <div class="cfixe-pro-pack-right">
                                 <div class="cfixe-pack-price">${Number(p.price).toFixed(2)} €</div>
-                                <div style="display: flex; gap: 6px;">
-                                    <button class="btn btn-outline btn-sm" onclick="app.editPack('${p.id}')" title="Modifier le pack">
-                                        <i class="fa-regular fa-pen-to-square"></i>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-outline btn-sm" onclick="app.openEditPackModal('${p.id}')" title="Modifier le pack">
+                                        <i class="fa-regular fa-pen-to-square"></i> Modifier
                                     </button>
                                     <button class="btn btn-danger btn-sm" onclick="app.deletePack('${p.id}')" title="Supprimer le pack">
                                         <i class="fa-regular fa-trash-can"></i>
                                     </button>
-                                    <a href="../reserver.html#cadeaux" target="_blank" class="btn btn-outline btn-sm" title="Voir sur le site public">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    </a>
                                 </div>
                             </div>
                         </div>
                     `).join('')}
-                </div>
-            `;
-            return;
-        }
-
-        // VUE TAB 3 : CARTES CADEAUX
-        if (this.catalogueTab === 'vouchers') {
-            container.innerHTML = `
-                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 20px;">
-                    <div style="background: linear-gradient(135deg, #17252A 0%, #203A43 100%); border-radius: 18px; padding: 28px 24px; color: #ffffff; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
-                            <div>
-                                <span style="display: inline-block; padding: 4px 10px; border-radius: 9999px; background: rgba(56, 189, 248, 0.2); color: #38BDF8; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                                    Boutique Cadeaux en ligne
-                                </span>
-                                <h3 style="font-size: 1.35rem; font-weight: 700; margin: 0; color: #ffffff;">Carte cadeau Stéphanie Bouteloup</h3>
-                                <p style="color: #94A3B8; font-size: 0.88rem; margin: 6px 0 0 0; max-width: 540px;">
-                                    Vos clients peuvent commander des bons cadeaux à montant libre (50€, 80€, 100€...) ou offrir l'un de vos soins au choix avec paiement sécurisé.
-                                </p>
-                            </div>
-                            <a href="../reserver.html#cadeaux" target="_blank" class="btn btn-primary" style="background: #38BDF8; color: #0F172A; font-weight: 700; text-decoration: none;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ouvrir la boutique cadeaux
-                            </a>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 6px;">
-                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
-                                <div style="font-size: 0.75rem; color: #94A3B8;">Montants suggérés</div>
-                                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 4px;">50€ • 80€ • 110€</div>
-                            </div>
-                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
-                                <div style="font-size: 0.75rem; color: #94A3B8;">Validité des bons</div>
-                                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 4px;">1 an (12 mois)</div>
-                            </div>
-                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
-                                <div style="font-size: 0.75rem; color: #94A3B8;">Délivrance</div>
-                                <div style="font-size: 1.05rem; font-weight: 700; color: #34D399; margin-top: 4px;">Immédiate par email</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             `;
             return;
@@ -1888,9 +2027,9 @@ class StephanieProApp {
             this.openNewAppointmentModal(todayIso, '10:00');
         });
 
-        // Bouton "+ Ajouter une prestation" dans le catalogue
+        // Bouton "+ Ajouter" dans le catalogue (s'adapte à l'onglet Prestations ou Packs)
         document.getElementById('btnOpenNewService')?.addEventListener('click', () => {
-            this.openNewServiceModal();
+            this.onCatalogueAddBtnClicked();
         });
 
         // Bouton "Bloquer un créneau"
@@ -1908,6 +2047,12 @@ class StephanieProApp {
         document.getElementById('formNewService')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveService();
+        });
+
+        // Soumission Formulaire Pack
+        document.getElementById('formNewPack')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.savePack();
         });
 
         // Soumission Bloquer Créneau

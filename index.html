@@ -278,22 +278,16 @@
                             </p>
                         </div>
                         <div id="catalogueHeaderBtnWrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button class="btn btn-outline btn-sm" onclick="window.open('../reserver.html#cadeaux', '_blank')">
-                                <i class="fa-solid fa-gift"></i> Boutique Cadeaux
-                            </button>
-                            <button class="btn btn-primary btn-sm" id="btnOpenNewService" onclick="app.openNewServiceModal()">
-                                <i class="fa-solid fa-plus"></i> + Ajouter
+                            <button class="btn btn-primary btn-sm" id="btnCatalogueAdd" onclick="app.onCatalogueAddBtnClicked()">
+                                <i class="fa-solid fa-plus"></i> <span id="btnCatalogueAddText">+ Ajouter un soin</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Tabs Catalogue : Prestation(s) | Carte(s) cadeau(x) | Pack(s) -->
+                    <!-- Tabs Catalogue : Prestation(s) | Pack(s) -->
                     <div class="catalogue-nav-tabs" id="catalogueNavTabs">
                         <button class="cat-tab-btn active" data-tab="services" onclick="app.setCatalogueTab('services')">
                             Prestation(s) <span class="cat-tab-count" id="countServicesTab">15</span>
-                        </button>
-                        <button class="cat-tab-btn" data-tab="vouchers" onclick="app.setCatalogueTab('vouchers')">
-                            Carte(s) cadeau(x)
                         </button>
                         <button class="cat-tab-btn" data-tab="packs" onclick="app.setCatalogueTab('packs')">
                             Pack(s) <span class="cat-tab-count" id="countPacksTab">10</span>
@@ -756,6 +750,71 @@
                     </button>
                     <button type="submit" class="btn btn-primary" id="btnSubmitBlockSlot" style="flex: 1; padding: 12px;">
                         <i class="fa-solid fa-lock" id="iconSubmitBlockSlot"></i> <span id="textSubmitBlockSlot">Bloquer ce créneau</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================================= 
+         MODAL 4B : CRÉER / MODIFIER UN PACK (AVEC COMPOSITION DE PRESTATIONS)
+         ========================================================================= -->
+    <div class="modal-backdrop" id="modalNewPack">
+        <div class="modal-card" style="max-width: 540px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-boxes-stacked" style="color: var(--primary); margin-right: 6px;"></i> <span id="packModalTitle">Nouveau Pack / Forfait</span></h3>
+                <button class="modal-close-btn" type="button"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="formNewPack" onsubmit="event.preventDefault(); app.savePack();">
+                <input type="hidden" id="packEditId">
+                
+                <div class="form-group">
+                    <label>Nom du pack ou forfait *</label>
+                    <input type="text" class="form-control" id="packName" required placeholder="Ex: Pack Massage Suédois : 5 séances 60 min + 1 Offerte">
+                </div>
+
+                <div class="form-group">
+                    <label>Tarif global du pack (€) *</label>
+                    <input type="number" step="0.5" class="form-control" id="packPrice" required placeholder="Ex: 375.00">
+                </div>
+
+                <!-- COMPOSITION DES PRESTATIONS DU PACK -->
+                <div class="form-group" style="margin-top: 20px;">
+                    <label style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span>Prestations incluses dans le pack</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Composez votre formule sur-mesure</span>
+                    </label>
+
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <select class="form-control" id="packServiceSelector" style="flex: 1;">
+                            <!-- Options remplies dynamiquement avec les soins actuels -->
+                        </select>
+                        <select class="form-control" id="packServiceQty" style="width: 80px;">
+                            <option value="1">x1</option>
+                            <option value="2">x2</option>
+                            <option value="3">x3</option>
+                            <option value="4">x4</option>
+                            <option value="5">x5</option>
+                            <option value="6" selected>x6</option>
+                            <option value="10">x10</option>
+                        </select>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="app.addPrestationToPackBuilder()" style="padding: 0 14px; white-space: nowrap;">
+                            <i class="fa-solid fa-plus"></i> Ajouter
+                        </button>
+                    </div>
+
+                    <!-- Liste des prestations actuellement ajoutées au pack (pilules cyan) -->
+                    <div id="packCompositionPillsContainer" style="min-height: 48px; padding: 10px; background: var(--bg-light); border-radius: 12px; border: 1.5px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                        <!-- Pilules générées en JS -->
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 26px;">
+                    <button type="button" class="btn btn-danger" id="btnDeletePackInModal" style="display: none; padding: 12px 18px;" onclick="app.deleteCurrentEditingPack()">
+                        <i class="fa-solid fa-trash-can"></i> Supprimer
+                    </button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1; padding: 12px;">
+                        <i class="fa-solid fa-check"></i> <span id="btnSubmitPackText">Enregistrer le pack</span>
                     </button>
                 </div>
             </form>
