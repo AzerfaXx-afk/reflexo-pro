@@ -67,38 +67,50 @@
             </div>
 
             <div class="sidebar-footer">
-                <!-- Account Trigger Button (Logged Out) -->
-                <div class="sidebar-account-pill" id="sidebarAccountTrigger" onclick="app.openAuthModal()" title="Connexion à votre compte Pro">
-                    <div class="account-avatar-placeholder">
-                        <i class="fa-regular fa-user"></i>
-                    </div>
-                    <div class="account-meta">
-                        <span class="account-name">Espace Pro</span>
-                        <span class="account-status">Se connecter</span>
-                    </div>
-                    <i class="fa-solid fa-arrow-right-to-bracket account-icon-login"></i>
-                </div>
+                <div class="sidebar-footer-card" id="sidebarFooterCard">
+                    <!-- Top section: Account & Test / Cloud Mode -->
+                    <div class="footer-card-user-row">
+                        <!-- Mode Déconnecté / Test -->
+                        <div class="user-status-group" id="accountLoggedOutState">
+                            <button type="button" class="btn-account-circle" onclick="app.openAuthModal()" title="Se connecter / Créer un compte">
+                                <i class="fa-regular fa-user"></i>
+                            </button>
+                            <div class="user-status-text" onclick="app.openAuthModal()" style="cursor: pointer;" title="Cliquez pour vous connecter">
+                                <div class="user-badge-mode test">
+                                    <span class="dot-test"></span> Mode Test
+                                </div>
+                                <span class="user-action-sub">Se connecter →</span>
+                            </div>
+                        </div>
 
-                <!-- User Account Pill (Visible when logged in) -->
-                <div class="sidebar-user-card" id="sidebarUserCard" style="display: none;">
-                    <div class="user-avatar-initials" id="userAvatarInitials">SB</div>
-                    <div class="user-info-text">
-                        <span class="user-name" id="userAccountName">Stéphanie</span>
-                        <span class="user-email" id="userAccountEmail">stephanie@...</span>
+                        <!-- Mode Connecté (Stéphanie Cloud) -->
+                        <div class="user-status-group" id="accountLoggedInState" style="display: none;">
+                            <div class="user-avatar-circle" id="userAvatarInitials">SB</div>
+                            <div class="user-status-text">
+                                <span class="user-display-name" id="userAccountName">Stéphanie</span>
+                                <div class="user-badge-mode sync">
+                                    <i class="fa-solid fa-cloud"></i> Synchronisé
+                                </div>
+                            </div>
+                            <button type="button" class="btn-card-logout" id="btnLogout" onclick="app.logout()" title="Se déconnecter">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn-logout" id="btnLogout" title="Se déconnecter" type="button">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    </button>
-                </div>
 
-                <div class="cabinet-live-card" id="cabinetLiveCard">
-                    <div class="live-status-pill open" id="liveStatusBadge">
-                        <span class="live-status-dot"></span>
-                        <span class="live-status-label" id="liveStatusLabel">Cabinet ouvert</span>
-                    </div>
-                    <div class="live-hours-detail">
-                        <i class="fa-regular fa-clock"></i>
-                        <span id="liveHoursText">Ferme à 19h00</span>
+                    <!-- Divider -->
+                    <div class="footer-card-divider"></div>
+
+                    <!-- Bottom section: Cabinet Live Status -->
+                    <div class="footer-card-live-row">
+                        <div class="live-status-pill open" id="liveStatusBadge">
+                            <span class="live-status-dot"></span>
+                            <span class="live-status-label" id="liveStatusLabel">Cabinet ouvert</span>
+                        </div>
+                        <div class="live-hours-detail">
+                            <i class="fa-regular fa-clock"></i>
+                            <span id="liveHoursText">Ferme à 19h00</span>
+                        </div>
                     </div>
                 </div>
             </div>

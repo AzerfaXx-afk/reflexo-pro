@@ -322,24 +322,26 @@ class StephanieProApp {
                 }
             }
 
+            const loggedOutGroup = document.getElementById('accountLoggedOutState');
+            const loggedInGroup = document.getElementById('accountLoggedInState');
+
             if (user) {
                 this.currentUser = user;
                 if (overlay) {
                     overlay.classList.add('hidden');
                     setTimeout(() => overlay.style.display = 'none', 400);
                 }
-                if (accountTrigger) accountTrigger.style.display = 'none';
-                if (userCard) {
-                    userCard.style.display = 'flex';
-                    const email = user.email || 'Cabinet Pro';
-                    if (userEmailEl) userEmailEl.textContent = email;
-                    if (userNameEl) userNameEl.textContent = email.split('@')[0];
-                    if (userAvatarEl) userAvatarEl.textContent = (email[0] || 'S').toUpperCase();
-                }
+                if (loggedOutGroup) loggedOutGroup.style.display = 'none';
+                if (loggedInGroup) loggedInGroup.style.display = 'flex';
+                const email = user.email || 'Cabinet Pro';
+                const name = user.user_metadata?.full_name || email.split('@')[0];
+                if (userNameEl) userNameEl.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+                if (userAvatarEl) userAvatarEl.textContent = (email[0] || 'S').toUpperCase();
                 if (mobileAccountText) mobileAccountText.textContent = 'Cabinet';
             } else {
-                if (accountTrigger) accountTrigger.style.display = 'flex';
-                if (userCard) userCard.style.display = 'none';
+                this.currentUser = null;
+                if (loggedOutGroup) loggedOutGroup.style.display = 'flex';
+                if (loggedInGroup) loggedInGroup.style.display = 'none';
                 if (mobileAccountText) mobileAccountText.textContent = 'Connexion';
             }
         };
@@ -486,27 +488,26 @@ class StephanieProApp {
 
     async syncWithSupabase() {
         if (!window.supabaseService) return;
+        // Mode Test : si non connectée, on n'altère pas la base cloud Supabase
+        if (!this.currentUser) {
+            console.log('🧪 Mode Test actif : données locales uniquement, aucune écriture Cloud');
+            return;
+        }
         try {
             const connected = await window.supabaseService.testConnection();
             if (connected) {
-                console.log('⚡ Supabase Cloud connecté !');
+                console.log('⚡ Supabase Cloud connecté pour', this.currentUser.email);
                 const cloudState = await window.supabaseService.loadFullState();
                 if (cloudState) {
-                    this.data.clients = cloudState.clients || [];
-                    this.data.services = cloudState.services || [];
-                    this.data.appointments = cloudState.appointments || [];
-                    this.data.blockedSlots = cloudState.blockedSlots || [];
-
-                    if (cloudState.schedule) {
-                        this.data.schedule = cloudState.schedule;
+                    if (Array.isArray(cloudState.services)) this.data.services = cloudState.services;
+                    if (Array.isArray(cloudState.appointments)) this.data.appointments = cloudState.appointments;
+                    if (Array.isArray(cloudState.blockedSlots)) this.data.blockedSlots = cloudState.blockedSlots;
+                    if (Array.isArray(cloudState.clients)) this.data.clients = cloudState.clients;
+                    if (cloudState.settings) {
+                        this.applyLoadedSettings(cloudState.settings);
                     }
-                    if (cloudState.bufferTime !== undefined) {
-                        this.data.bufferTime = cloudState.bufferTime;
-                    }
-
                     this.saveData();
                     this.renderAll();
-                    this.populateServiceDropdown();
                     if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
                 }
             }
@@ -1370,13 +1371,17 @@ class StephanieProApp {
         this.addNotification(`Nouveau RDV pris : ${clientName} - ${serviceName} (${date} à ${time})`);
         this.saveData();
 
-        // Synchronisation Cloud Supabase
-        window.supabaseService?.upsertAppointment(newAppt);
-        window.supabaseService?.upsertClient(existingClient);
+        // Synchronisation Cloud Supabase uniquement si connectée
+        if (this.currentUser) {
+            window.supabaseService?.upsertAppointment(newAppt);
+            window.supabaseService?.upsertClient(existingClient);
+            this.showToast(`Rendez-vous enregistré et synchronisé sur le Cloud !`, 'success');
+        } else {
+            this.showToast(`Mode Test : RDV ajouté localement (connectez-vous pour synchroniser sur le Cloud)`, 'info');
+        }
 
         document.getElementById('modalNewAppointment').classList.remove('open');
         this.renderAll();
-        this.showToast(`Rendez-vous enregistré avec succès pour ${clientName} !`, 'success');
     }
 
     openAppointmentDetails(id) {
@@ -1420,10 +1425,14 @@ class StephanieProApp {
                 if (confirm(`Voulez-vous annuler le rendez-vous de ${appt.clientName} ?`)) {
                     this.data.appointments = this.data.appointments.filter(a => a.id !== id);
                     this.saveData();
-                    window.supabaseService?.deleteAppointment(id);
+                    if (this.currentUser) {
+                        window.supabaseService?.deleteAppointment(id);
+                        this.showToast('Rendez-vous annulé et supprimé du Cloud.', 'danger');
+                    } else {
+                        this.showToast('Mode Test : rendez-vous annulé localement.', 'info');
+                    }
                     modal.classList.remove('open');
                     this.renderAll();
-                    this.showToast('Rendez-vous annulé.', 'danger');
                 }
             };
         }
@@ -1517,10 +1526,14 @@ class StephanieProApp {
         if (confirm('Voulez-vous supprimer cette prestation du catalogue ?')) {
             this.data.services = this.data.services.filter(s => s.id !== id);
             this.saveData();
-            window.supabaseService?.deleteService(id);
+            if (this.currentUser) {
+                window.supabaseService?.deleteService(id);
+                this.showToast('Prestation supprimée du Cloud', 'danger');
+            } else {
+                this.showToast('Mode Test : prestation supprimée localement', 'info');
+            }
             this.renderCatalogue();
             this.populateServiceDropdown();
-            this.showToast('Prestation supprimée', 'danger');
         }
     }
 
@@ -1587,7 +1600,12 @@ class StephanieProApp {
         }
 
         this.saveData();
-        if (savedService) window.supabaseService?.upsertService(savedService);
+        if (this.currentUser && savedService) {
+            window.supabaseService?.upsertService(savedService);
+            this.showToast('Prestation synchronisée sur le Cloud !', 'success');
+        } else {
+            this.showToast('Mode Test : prestation enregistrée localement (non synchronisée au Cloud)', 'info');
+        }
 
         document.getElementById('modalNewService').classList.remove('open');
         this.renderCatalogue();
@@ -1692,7 +1710,12 @@ class StephanieProApp {
         }
 
         this.saveData();
-        if (savedBlock) window.supabaseService?.upsertBlockedSlot(savedBlock);
+        if (this.currentUser && savedBlock) {
+            window.supabaseService?.upsertBlockedSlot(savedBlock);
+            this.showToast('Créneau indisponible synchronisé sur le Cloud.', 'success');
+        } else {
+            this.showToast('Mode Test : créneau bloqué localement.', 'info');
+        }
 
         document.getElementById('modalBlockSlot').classList.remove('open');
         if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
@@ -1701,10 +1724,14 @@ class StephanieProApp {
     deleteBlockedSlot(id) {
         this.data.blockedSlots = this.data.blockedSlots.filter(b => b.id !== id);
         this.saveData();
-        window.supabaseService?.deleteBlockedSlot(id);
+        if (this.currentUser) {
+            window.supabaseService?.deleteBlockedSlot(id);
+            this.showToast('Indisponibilité supprimée du Cloud.', 'danger');
+        } else {
+            this.showToast('Mode Test : indisponibilité supprimée localement.', 'info');
+        }
         document.getElementById('modalBlockSlot').classList.remove('open');
         if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
-        this.showToast('Indisponibilité supprimée.', 'danger');
     }
 
     renderSettingsSchedule() {
@@ -1779,14 +1806,18 @@ class StephanieProApp {
         const email = document.getElementById('settingCabinetEmail')?.value.trim();
         this.data.cabinetInfo = { address, phone, email };
         this.saveData();
-        window.supabaseService?.saveSettings({
-            address,
-            phone,
-            email,
-            bufferTime: this.data.bufferTime,
-            schedule: this.data.schedule
-        });
-        this.showToast('Informations du cabinet enregistrées et synchronisées', 'success');
+        if (this.currentUser) {
+            window.supabaseService?.saveSettings({
+                address,
+                phone,
+                email,
+                bufferTime: this.data.bufferTime,
+                schedule: this.data.schedule
+            });
+            this.showToast('Informations et horaires enregistrés sur le Cloud !', 'success');
+        } else {
+            this.showToast('Mode Test : paramètres enregistrés localement', 'info');
+        }
     }
 
     showToast(message, type = 'success') {

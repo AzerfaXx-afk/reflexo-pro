@@ -1669,25 +1669,7 @@ input, select, textarea {
     margin-top: 2px;
 }
 
-/* CABINET LIVE STATUS CARD */
-.cabinet-live-card {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(95, 158, 160, 0.18);
-    border-radius: var(--radius-lg);
-    padding: 12px 14px;
-    box-shadow: 0 4px 16px rgba(31, 56, 62, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-.cabinet-live-card:hover {
-    border-color: rgba(95, 158, 160, 0.35);
-    box-shadow: 0 6px 20px rgba(31, 56, 62, 0.08);
-}
+/* LIVE STATUS INDICATOR */
 
 .live-status-pill {
     display: inline-flex;
@@ -2360,73 +2342,154 @@ input, select, textarea {
 }
 
 /* ========================================================================= 
-   BOUTON COMPTE / CONNEXION (EN BAS À GAUCHE DE LA SIDEBAR)
+   CARTE UNIFIÉE EN BAS À GAUCHE (COMPTE & STATUT CABINET)
    ========================================================================= */
 
-.sidebar-account-pill {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.sidebar-footer-card {
     background: #FFFFFF;
-    border: 1.5px solid rgba(95, 158, 160, 0.25);
-    border-radius: 16px;
-    padding: 10px 14px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(31, 56, 62, 0.05);
+    border: 1px solid rgba(95, 158, 160, 0.22);
+    border-radius: 18px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 18px rgba(31, 56, 62, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.sidebar-account-pill:hover {
-    transform: translateY(-2px);
-    border-color: var(--primary);
-    box-shadow: 0 8px 20px rgba(95, 158, 160, 0.18);
-    background: #FAFDFD;
+.sidebar-footer-card:hover {
+    border-color: rgba(95, 158, 160, 0.38);
+    box-shadow: 0 8px 24px rgba(95, 158, 160, 0.12);
 }
 
-.account-avatar-placeholder {
+/* Rangée Utilisateur / Compte */
+.footer-card-user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.user-status-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.btn-account-circle, .user-avatar-circle {
     width: 36px;
     height: 36px;
     border-radius: 50%;
+    border: none;
     background: var(--primary-light);
     color: var(--primary-dark);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
     flex-shrink: 0;
+    transition: all 0.2s ease;
 }
 
-.account-meta {
+.btn-account-circle:hover {
+    background: var(--primary);
+    color: #FFFFFF;
+    transform: scale(1.05);
+}
+
+.user-status-text {
     display: flex;
     flex-direction: column;
+    gap: 2px;
     flex: 1;
     overflow: hidden;
 }
 
-.account-name {
-    font-size: 0.85rem;
+.user-display-name {
+    font-size: 0.84rem;
     font-weight: 700;
     color: var(--primary-dark);
-    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.account-status {
-    font-size: 0.74rem;
+.user-action-sub {
+    font-size: 0.72rem;
     color: var(--primary);
     font-weight: 600;
-    line-height: 1.2;
 }
 
-.account-icon-login {
-    font-size: 0.85rem;
+.user-badge-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 20px;
+    padding: 2px 8px;
+    width: fit-content;
+}
+
+.user-badge-mode.test {
+    background: #FFF7ED;
+    color: #C2410C;
+    border: 1px solid #FFEDD5;
+}
+
+.user-badge-mode.test .dot-test {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #F97316;
+}
+
+.user-badge-mode.sync {
+    background: #F0FDF4;
+    color: #15803D;
+    border: 1px solid #DCFCE7;
+}
+
+.user-badge-mode.sync i {
+    font-size: 0.7rem;
+}
+
+.btn-card-logout {
+    background: transparent;
+    border: none;
     color: var(--text-muted);
-    transition: transform 0.2s ease, color 0.2s ease;
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-left: auto;
 }
 
-.sidebar-account-pill:hover .account-icon-login {
-    transform: translateX(3px);
-    color: var(--primary);
+.btn-card-logout:hover {
+    background: #FFEBEE;
+    color: #DC2626;
+    transform: scale(1.1);
+}
+
+/* Divider fin */
+.footer-card-divider {
+    height: 1px;
+    background: rgba(95, 158, 160, 0.12);
+    width: 100%;
+}
+
+/* Rangée Statut Cabinet */
+.footer-card-live-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
 }
 
 /* Auth Modal Close Button */

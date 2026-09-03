@@ -1289,6 +1289,26 @@
 
                         // 2. Appointment
                         await supabaseClient.from('appointments').insert(newAppointment);
+
+                        // 3. Notification e-mail immédiate à Stéphanie (phanybox@gmail.com)
+                        fetch('https://formsubmit.co/ajax/phanybox@gmail.com', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({
+                                'Notification': '🗓️ NOUVELLE RÉSERVATION EN LIGNE',
+                                'Cliente': fullName,
+                                'Téléphone': phone,
+                                'Email': email,
+                                'Soin réservé': selectedService.name,
+                                'Date': selectedDate,
+                                'Heure': selectedTime,
+                                'Durée': selectedService.duration + ' min',
+                                'Tarif': selectedService.price + ' €',
+                                'Commentaires': notes || 'Aucun',
+                                '_subject': `🗓️ Nouveau RDV : ${fullName} - ${selectedService.name} (${selectedDate} à ${selectedTime})`,
+                                '_template': 'table'
+                            })
+                        }).catch(e => console.log('Notification email non-bloquante:', e));
                     } catch (err) {
                         console.error('Booking sync error:', err);
                     }
