@@ -197,15 +197,6 @@ class StephanieProApp {
             }
         }
 
-        // Si aucun RDV ou soin n'est chargé et qu'on n'a pas explicitement vidé le test : charger automatiquement les données Cfixé !
-        if (data.appointments.length === 0 && !localStorage.getItem('cfixe_cleared') && window.CFIXE_IMPORT_DATA) {
-            data.appointments = [...(window.CFIXE_IMPORT_DATA.appointments || [])];
-            data.clients = [...(window.CFIXE_IMPORT_DATA.clients || [])];
-            if (data.services.length === 0 && window.CFIXE_IMPORT_DATA.services) {
-                data.services = [...window.CFIXE_IMPORT_DATA.services];
-            }
-        }
-        
         return data;
     }
 
@@ -919,7 +910,10 @@ class StephanieProApp {
         const tbody = document.getElementById('clientsTableBody');
         if (!tbody) return;
 
-        let filtered = this.data.clients;
+        let filtered = [...this.data.clients];
+        // Tri alphabétique A-Z strict respectant la langue française (accents etc.)
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }));
+
         if (filterQuery) {
             const q = filterQuery.toLowerCase();
             filtered = filtered.filter(c => 
@@ -953,6 +947,7 @@ class StephanieProApp {
         tbody.innerHTML = filtered.map(c => {
             const clientAppts = this.data.appointments.filter(a => a.clientName && a.clientName.toLowerCase() === c.name.toLowerCase());
             const totalSpent = clientAppts.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+            const safeName = (c.name || 'Client').replace(/'/g, "\\'");
 
             return `
                 <tr>
@@ -965,13 +960,84 @@ class StephanieProApp {
                     <td>${c.email || '-'}</td>
                     <td>${clientAppts.length} rendez-vous (${totalSpent} €)</td>
                     <td>
-                        <button class="btn btn-outline btn-sm" onclick="app.openNewAppointmentForClient('${c.name}', '${c.phone}')">
-                            <i class="fa-regular fa-calendar-plus"></i> Nouveau RDV
+                        <button class="btn btn-outline btn-sm" onclick="app.openClientHistoryModal('${safeName}')" style="display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-regular fa-calendar-check"></i> Voir les RDV (${clientAppts.length})
                         </button>
                     </td>
                 </tr>
             `;
         }).join('');
+    }
+
+    openClientHistoryModal(clientName) {
+        const client = this.data.clients.find(c => c.name.toLowerCase() === clientName.toLowerCase()) || { name: clientName, phone: '', email: '' };
+        const modal = document.getElementById('modalClientHistory');
+        if (!modal) return;
+
+        const appts = this.data.appointments
+            .filter(a => a.clientName && a.clientName.toLowerCase() === clientName.toLowerCase())
+            .sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
+
+        const totalSpent = appts.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+        document.getElementById('historyClientName').textContent = client.name;
+        document.getElementById('historyClientPhone').textContent = client.phone || 'Non renseigné';
+        document.getElementById('historyClientSpent').textContent = `${totalSpent} € (${appts.length} soins)`;
+        document.getElementById('historyCountBadge').textContent = `${appts.length} rendez-vous au total`;
+
+        const callBtn = document.getElementById('historyCallBtn');
+        const smsBtn = document.getElementById('historySmsBtn');
+        if (client.phone) {
+            callBtn.href = `tel:${client.phone}`;
+            callBtn.style.display = 'inline-flex';
+            smsBtn.href = `sms:${client.phone}`;
+            smsBtn.style.display = 'inline-flex';
+        } else {
+            callBtn.style.display = 'none';
+            smsBtn.style.display = 'none';
+        }
+
+        const listContainer = document.getElementById('historyAppointmentsList');
+        if (appts.length === 0) {
+            listContainer.innerHTML = `
+                <div style="text-align: center; padding: 25px 15px; color: var(--text-muted); font-size: 0.88rem;">
+                    Aucun rendez-vous enregistré pour ce client pour le moment.
+                </div>
+            `;
+        } else {
+            listContainer.innerHTML = appts.map(a => {
+                return `
+                    <div style="background: var(--surface); border: 1px solid rgba(0,0,0,0.06); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-heading); font-size: 0.92rem;">
+                                ${a.serviceName || 'Soin'}
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                <i class="fa-regular fa-calendar" style="margin-right: 4px;"></i> ${a.date} à ${a.time} (${a.duration || 60} min)
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-weight: 700; color: var(--primary-dark); font-size: 0.92rem;">${a.price || 80} €</span>
+                            <button type="button" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem;" onclick="app.closeClientHistoryAndOpenAppt('${a.id}')">
+                                <i class="fa-regular fa-pen-to-square"></i> Modifier
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.getElementById('historyNewApptBtn').onclick = () => {
+            modal.classList.remove('open');
+            this.openNewAppointmentForClient(client.name, client.phone);
+        };
+
+        modal.classList.add('open');
+    }
+
+    closeClientHistoryAndOpenAppt(apptId) {
+        document.getElementById('modalClientHistory')?.classList.remove('open');
+        this.openAppointmentDetails(apptId);
     }
 
     /* ========================================================================= 

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Stéphanie Pro - Planning & Cabinet</title>
+    <title>Reflexo Pro - Planning & Cabinet</title>
     
     <!-- PWA & Mobile Web App Meta -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#5F9EA0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Stéphanie Pro">
+    <meta name="apple-mobile-web-app-title" content="Reflexo Pro">
     <link rel="apple-touch-icon" href="assets/icon-pro-512.png">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-pro-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-pro-512.png">
@@ -35,10 +35,10 @@
         <aside class="sidebar">
             <div>
                 <div class="sidebar-header clickable-brand" id="sidebarBrandLink" role="button" tabindex="0" title="Retourner au Tableau de bord">
-                    <img src="assets/icon-pro-512.png" alt="Logo Stéphanie Pro" class="sidebar-logo">
+                    <img src="assets/icon-pro-512.png" alt="Logo Reflexo Pro" class="sidebar-logo">
                     <div>
-                        <div class="sidebar-brand-title">Stéphanie Bouteloup</div>
-                        <span class="sidebar-brand-badge">Accueil</span>
+                        <div class="sidebar-brand-title">Reflexo Pro</div>
+                        <span class="sidebar-brand-badge">Cabinet</span>
                     </div>
                 </div>
 
@@ -715,6 +715,56 @@
         </div>
     </div>
 
+
+    <!-- ========================================================================= 
+         MODAL 5 : HISTORIQUE DES RENDEZ-VOUS DU CLIENT
+         ========================================================================= -->
+    <div class="modal-backdrop" id="modalClientHistory">
+        <div class="modal-card" style="max-width: 580px;">
+            <div class="modal-header">
+                <div>
+                    <h3 id="historyClientName" style="font-size: 1.3rem; margin: 0; color: var(--text-heading);">Historique du Client</h3>
+                    <div id="historyClientSubtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Coordonnées & liste des rendez-vous</div>
+                </div>
+                <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div>
+                <!-- Bandeau contact & dépenses -->
+                <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-light); padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Téléphone</span>
+                        <strong id="historyClientPhone" style="font-size: 0.95rem; color: var(--primary-dark);">-</strong>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Total des soins</span>
+                        <strong id="historyClientSpent" style="font-size: 0.95rem; color: var(--text-heading);">-</strong>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <a id="historyCallBtn" href="#" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.78rem;">
+                            <i class="fa-solid fa-phone"></i> Appeler
+                        </a>
+                        <a id="historySmsBtn" href="#" class="btn btn-outline btn-sm" style="padding: 6px 10px; font-size: 0.78rem;">
+                            <i class="fa-solid fa-comment-sms"></i> SMS
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Liste dynamique des rendez-vous -->
+                <div style="max-height: 320px; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 8px;" id="historyAppointmentsList">
+                    <!-- Généré dynamiquement -->
+                </div>
+
+                <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span id="historyCountBadge" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">0 rendez-vous trouvé</span>
+                    <button type="button" class="btn btn-primary btn-sm" id="historyNewApptBtn">
+                        <i class="fa-solid fa-plus"></i> Nouveau RDV pour ce client
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- ========================================================================= 
          AUTHENTICATION OVERLAY (ESPACE PRIVÉ SÉCURISÉ)
          ========================================================================= -->
@@ -726,9 +776,9 @@
 
             <div class="auth-card-header">
                 <div class="auth-logo-badge">
-                    <img src="assets/icon-pro-512.png" alt="Stéphanie Pro" class="auth-logo-img">
+                    <img src="assets/icon-pro-512.png" alt="Reflexo Pro" class="auth-logo-img">
                 </div>
-                <h2 class="auth-title">Stéphanie Pro</h2>
+                <h2 class="auth-title">Reflexo Pro</h2>
                 <p class="auth-subtitle">Espace Privé Cabinet & Planning</p>
             </div>
 
