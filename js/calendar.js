@@ -1,13 +1,11 @@
 /**
- * CALENDAR ENGINE FOR STÉPHANIE PRO
- * Agenda hebdomadaire interactif avec Drag & Drop et support tactile
+ * CALENDAR ENGINE FOR REFLEXO PRO
+ * Agenda interactif multi-vues (Jour / 3 Jours / Semaine) avec Drag & Drop et support tactile mobile
  */
 
 class ProCalendar {
     constructor(containerId, options = {}) {
         this.container = document.getElementById(containerId);
-        this.currentDate = new Date();
-        this.currentWeekStart = this.getMonday(new Date());
         this.onEventClick = options.onEventClick || (() => {});
         this.onEventDrop = options.onEventDrop || (() => {});
         this.onSlotClick = options.onSlotClick || (() => {});
@@ -15,39 +13,18 @@ class ProCalendar {
         this.startHour = 7.5; // 07h30
         this.endHour = 20.5;   // 20h30
         
-        // Niveaux de zoom fluide
-        this.zoomLevels = [
-            { level: 75, pixelsPerHour: 45, label: '75%' },
-            { level: 100, pixelsPerHour: 60, label: '100%' },
-            { level: 125, pixelsPerHour: 75, label: '125%' },
-            { level: 150, pixelsPerHour: 90, label: '150%' }
-        ];
-        this.currentZoomIndex = 1; // 100%
-        this.pixelsPerHour = this.zoomLevels[this.currentZoomIndex].pixelsPerHour;
+        // Mode de vue : 'day' (1j), '3days' (3j recommandé mobile), 'week' (7j)
+        const savedMode = localStorage.getItem('cal_view_mode');
+        this.viewMode = savedMode || (window.innerWidth <= 768 ? '3days' : 'week');
+
+        this.currentDate = new Date();
+        this.currentDate.setHours(0, 0, 0, 0);
+        this.currentWeekStart = this.getMonday(new Date());
+        
+        this.pixelsPerHour = 70;
         this.draggedEvent = null;
 
         this.init();
-    }
-
-    zoomIn() {
-        if (this.currentZoomIndex < this.zoomLevels.length - 1) {
-            this.currentZoomIndex++;
-            this.applyZoom();
-        }
-    }
-
-    zoomOut() {
-        if (this.currentZoomIndex > 0) {
-            this.currentZoomIndex--;
-            this.applyZoom();
-        }
-    }
-
-    applyZoom() {
-        this.pixelsPerHour = this.zoomLevels[this.currentZoomIndex].pixelsPerHour;
-        const badge = document.getElementById('calZoomBadge');
-        if (badge) badge.textContent = this.zoomLevels[this.currentZoomIndex].label;
-        this.render(this.events, this.blockedSlots);
     }
 
     getMonday(d) {
@@ -60,30 +37,75 @@ class ProCalendar {
     }
 
     init() {
+        this.updateSwitcherUI();
         this.render();
     }
 
-    prevWeek() {
-        this.currentWeekStart.setDate(this.currentWeekStart.getDate() - 7);
+    setViewMode(mode) {
+        if (!['day', '3days', 'week'].includes(mode)) return;
+        this.viewMode = mode;
+        localStorage.setItem('cal_view_mode', mode);
+        this.updateSwitcherUI();
         this.render();
     }
 
-    nextWeek() {
-        this.currentWeekStart.setDate(this.currentWeekStart.getDate() + 7);
+    updateSwitcherUI() {
+        document.querySelectorAll('.view-mode-btn').forEach(btn => {
+            const mode = btn.getAttribute('data-mode');
+            if (mode === this.viewMode) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    prev() {
+        if (this.viewMode === 'day') {
+            this.currentDate.setDate(this.currentDate.getDate() - 1);
+        } else if (this.viewMode === '3days') {
+            this.currentDate.setDate(this.currentDate.getDate() - 3);
+        } else {
+            this.currentWeekStart.setDate(this.currentWeekStart.getDate() - 7);
+        }
+        this.render();
+    }
+
+    next() {
+        if (this.viewMode === 'day') {
+            this.currentDate.setDate(this.currentDate.getDate() + 1);
+        } else if (this.viewMode === '3days') {
+            this.currentDate.setDate(this.currentDate.getDate() + 3);
+        } else {
+            this.currentWeekStart.setDate(this.currentWeekStart.getDate() + 7);
+        }
         this.render();
     }
 
     today() {
+        this.currentDate = new Date();
+        this.currentDate.setHours(0, 0, 0, 0);
         this.currentWeekStart = this.getMonday(new Date());
         this.render();
     }
 
-    getWeekDays() {
+    getVisibleDays() {
         const days = [];
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(this.currentWeekStart);
-            d.setDate(d.getDate() + i);
-            days.push(d);
+        if (this.viewMode === 'day') {
+            days.push(new Date(this.currentDate));
+        } else if (this.viewMode === '3days') {
+            for (let i = 0; i < 3; i++) {
+                const d = new Date(this.currentDate);
+                d.setDate(d.getDate() + i);
+                days.push(d);
+            }
+        } else {
+            // 'week' (7 jours)
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(this.currentWeekStart);
+                d.setDate(d.getDate() + i);
+                days.push(d);
+            }
         }
         return days;
     }
@@ -103,29 +125,54 @@ class ProCalendar {
         
         if (!this.container) return;
 
-        const weekDays = this.getWeekDays();
+        const visibleDays = this.getVisibleDays();
         const todayIso = this.formatDateIso(new Date());
+        const numDays = visibleDays.length;
         
-        // Update Title Label if element exists
+        // Mise à jour du titre de la période
         const titleEl = document.getElementById('calendarPeriodTitle');
         if (titleEl) {
-            const startMonth = weekDays[0].toLocaleDateString('fr-FR', { month: 'short' });
-            const endMonth = weekDays[6].toLocaleDateString('fr-FR', { month: 'short' });
-            const year = weekDays[6].getFullYear();
-            titleEl.textContent = `${weekDays[0].getDate()} ${startMonth} - ${weekDays[6].getDate()} ${endMonth} ${year}`;
+            const months = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+            if (this.viewMode === 'day') {
+                const d = visibleDays[0];
+                const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short' });
+                titleEl.textContent = `${dayName}. ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+            } else {
+                const d1 = visibleDays[0];
+                const d2 = visibleDays[visibleDays.length - 1];
+                if (d1.getMonth() === d2.getMonth()) {
+                    titleEl.textContent = `${d1.getDate()} - ${d2.getDate()} ${months[d2.getMonth()]} ${d2.getFullYear()}`;
+                } else {
+                    titleEl.textContent = `${d1.getDate()} ${months[d1.getMonth()]} - ${d2.getDate()} ${months[d2.getMonth()]} ${d2.getFullYear()}`;
+                }
+            }
         }
 
-        const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+        // Grille adaptative CSS inline pour correspondre au nombre de jours
+        let colStyle = '';
+        if (this.viewMode === 'day') {
+            colStyle = 'grid-template-columns: 48px 1fr; min-width: 100%;';
+        } else if (this.viewMode === '3days') {
+            colStyle = 'grid-template-columns: 48px repeat(3, minmax(96px, 1fr)); min-width: 100%;';
+        } else {
+            // 'week' (7 jours)
+            colStyle = window.innerWidth <= 768
+                ? 'grid-template-columns: 46px repeat(7, minmax(120px, 1fr)); min-width: 890px;'
+                : 'grid-template-columns: 55px repeat(7, minmax(100px, 1fr)); min-width: 100%;';
+        }
 
         // Header Days
-        let headerHtml = `<div class="calendar-header-days">
+        let headerHtml = `<div class="calendar-header-days" style="${colStyle}">
             <div class="day-col-header" style="background: var(--bg-light); border-right: 1px solid rgba(0,0,0,0.05);"></div>`;
 
-        weekDays.forEach((d, idx) => {
+        visibleDays.forEach((d) => {
             const isToday = this.formatDateIso(d) === todayIso;
+            const dayOfWeek = dayNames[d.getDay()];
             headerHtml += `
                 <div class="day-col-header ${isToday ? 'today' : ''}" data-date="${this.formatDateIso(d)}">
-                    <div class="day-name">${dayNames[idx]}.</div>
+                    <div class="day-name">${dayOfWeek}.</div>
                     <div class="day-number">${d.getDate()}</div>
                 </div>
             `;
@@ -133,7 +180,7 @@ class ProCalendar {
         headerHtml += `</div>`;
 
         // Body with Time Axis & Columns
-        let bodyHtml = `<div class="calendar-body-scroll"><div class="calendar-grid-body">`;
+        let bodyHtml = `<div class="calendar-body-scroll"><div class="calendar-grid-body" style="${colStyle}">`;
 
         const slotHalfHourHeight = this.pixelsPerHour / 2;
 
@@ -147,8 +194,8 @@ class ProCalendar {
         }
         bodyHtml += `</div>`;
 
-        // 7 Day Columns
-        weekDays.forEach((d) => {
+        // Day Columns
+        visibleDays.forEach((d) => {
             const dateIso = this.formatDateIso(d);
             const isToday = dateIso === todayIso;
 
@@ -159,23 +206,23 @@ class ProCalendar {
                 const hour = Math.floor(h);
                 const min = h % 1 === 0 ? '00' : '30';
                 const timeStr = `${String(hour).padStart(2, '0')}:${min}`;
-                bodyHtml += `<div class="hour-line" data-time="${timeStr}" style="height: ${slotHalfHourHeight}px;" title="Cliquez pour ajouter un RDV"></div>`;
+                bodyHtml += `<div class="hour-line" data-time="${timeStr}" style="height: ${slotHalfHourHeight}px;" title="Cliquer pour ajouter un RDV"></div>`;
             }
 
             // Render Events for this day
             const dayEvents = this.events.filter(e => e.date === dateIso);
             dayEvents.forEach(evt => {
-                const [eh, em] = evt.time.split(':').map(Number);
+                const [eh, em] = (evt.time || '10:00').split(':').map(Number);
                 const eventHour = eh + (em / 60);
                 const topPos = (eventHour - this.startHour) * this.pixelsPerHour;
-                const heightPos = (evt.duration / 60) * this.pixelsPerHour - 2;
+                const durMin = Number(evt.duration) || 60;
+                const heightPos = (durMin / 60) * this.pixelsPerHour - 2;
 
                 const catBg = evt.colorBg || '#E8EAF6';
                 const catBorder = evt.colorBorder || '#5F9EA0';
                 const catText = evt.colorText || '#1F383E';
 
                 // Calcul de l'heure de fin exacte
-                const durMin = Number(evt.duration) || 60;
                 const totalEndMin = eh * 60 + em + durMin;
                 const endH = String(Math.floor(totalEndMin / 60) % 24).padStart(2, '0');
                 const endM = String(totalEndMin % 60).padStart(2, '0');
@@ -185,6 +232,7 @@ class ProCalendar {
                     <div class="event-block" 
                          draggable="true" 
                          data-id="${evt.id}" 
+                         title="${timeLabel} | ${evt.clientName || 'Client'} | ${evt.serviceName || ''}"
                          style="top: ${topPos}px; height: ${heightPos}px; background-color: ${catBg}; border-left-color: ${catBorder}; color: ${catText};">
                         <div class="event-time">${timeLabel}</div>
                         <div class="event-client">${evt.clientName || 'Client'}</div>
@@ -196,14 +244,15 @@ class ProCalendar {
             // Render Blocked Slots for this day
             const dayBlocked = this.blockedSlots.filter(b => b.date === dateIso);
             dayBlocked.forEach(blk => {
-                const [bh, bm] = blk.time.split(':').map(Number);
+                const [bh, bm] = (blk.time || '12:00').split(':').map(Number);
                 const blockHour = bh + (bm / 60);
                 const topPos = (blockHour - this.startHour) * this.pixelsPerHour;
-                const heightPos = (blk.duration / 60) * this.pixelsPerHour - 2;
+                const heightPos = ((Number(blk.duration) || 60) / 60) * this.pixelsPerHour - 2;
 
                 bodyHtml += `
                     <div class="event-block blocked-time" 
                          data-id="${blk.id}" 
+                         title="${blk.time} - ${blk.reason || 'Indisponible'}"
                          style="top: ${topPos}px; height: ${heightPos}px;">
                         <div class="event-time">${blk.time} - ${blk.reason || 'Indisponible'}</div>
                     </div>
@@ -217,12 +266,26 @@ class ProCalendar {
 
         this.container.innerHTML = `<div class="calendar-grid-wrapper">${headerHtml}${bodyHtml}</div>`;
         this.attachEventListeners();
+
+        // Auto-scroll horizontal vers Aujourd'hui si en vue Semaine sur mobile
+        if (this.viewMode === 'week' && window.innerWidth <= 768) {
+            setTimeout(() => {
+                const todayCol = this.container.querySelector('.day-grid-column.today');
+                const scrollWrapper = this.container.querySelector('.calendar-grid-wrapper');
+                if (todayCol && scrollWrapper) {
+                    const scrollLeft = todayCol.offsetLeft - 50;
+                    if (scrollLeft > 0) {
+                        scrollWrapper.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+                    }
+                }
+            }, 60);
+        }
     }
 
     attachEventListeners() {
         // Click on hour slot to add event
         this.container.querySelectorAll('.hour-line').forEach(slot => {
-            slot.addEventListener('click', (e) => {
+            slot.addEventListener('click', () => {
                 const column = slot.closest('.day-grid-column');
                 const date = column.getAttribute('data-date');
                 const time = slot.getAttribute('data-time');
@@ -234,64 +297,71 @@ class ProCalendar {
         this.container.querySelectorAll('.event-block').forEach(block => {
             block.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const eventId = block.getAttribute('data-id');
-                const isBlocked = block.classList.contains('blocked-time');
-                this.onEventClick(eventId, isBlocked);
-            });
-
-            // Drag & Drop
-            block.addEventListener('dragstart', (e) => {
-                this.draggedEvent = block.getAttribute('data-id');
-                e.dataTransfer.setData('text/plain', this.draggedEvent);
-                e.dataTransfer.effectAllowed = 'move';
-                block.style.opacity = '0.4';
-            });
-
-            block.addEventListener('dragend', () => {
-                block.style.opacity = '1';
-                this.container.querySelectorAll('.day-grid-column').forEach(col => col.classList.remove('drag-over'));
+                const id = block.getAttribute('data-id');
+                this.onEventClick(id);
             });
         });
 
-        // Drop Targets (Day columns)
-        this.container.querySelectorAll('.day-grid-column').forEach(col => {
-            col.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                col.classList.add('drag-over');
+        // Setup Drag and Drop
+        this.setupDragAndDrop();
+    }
+
+    setupDragAndDrop() {
+        const blocks = this.container.querySelectorAll('.event-block');
+        const columns = this.container.querySelectorAll('.day-grid-column');
+
+        blocks.forEach(block => {
+            block.addEventListener('dragstart', (e) => {
+                this.draggedEvent = block.getAttribute('data-id');
+                block.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', this.draggedEvent);
             });
 
-            col.addEventListener('dragleave', () => {
-                col.classList.remove('drag-over');
+            block.addEventListener('dragend', () => {
+                block.classList.remove('dragging');
+                this.draggedEvent = null;
+                columns.forEach(c => c.classList.remove('drag-over'));
+            });
+        });
+
+        columns.forEach(column => {
+            column.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                column.classList.add('drag-over');
             });
 
-            col.addEventListener('drop', (e) => {
+            column.addEventListener('dragleave', () => {
+                column.classList.remove('drag-over');
+            });
+
+            column.addEventListener('drop', (e) => {
                 e.preventDefault();
-                col.classList.remove('drag-over');
-                const eventId = e.dataTransfer.getData('text/plain') || this.draggedEvent;
-                if (!eventId) return;
+                column.classList.remove('drag-over');
+                if (!this.draggedEvent) return;
 
-                const rect = col.getBoundingClientRect();
-                const scrollContainer = this.container.querySelector('.calendar-body-scroll');
-                const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-                const offsetY = e.clientY - rect.top + scrollTop;
-
-                // Calculate snapped time (30 min increments)
-                const hoursFromTop = offsetY / this.pixelsPerHour;
-                const rawHour = this.startHour + hoursFromTop;
+                const targetDate = column.getAttribute('data-date');
+                const rect = column.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
                 
-                // Snap to nearest 30 or 15 mins
-                const snappedHour = Math.floor(rawHour);
-                const remainderMin = (rawHour - snappedHour) * 60;
-                let snappedMin = remainderMin < 15 ? 0 : (remainderMin < 45 ? 30 : 0);
-                let finalHour = snappedHour;
-                if (remainderMin >= 45) finalHour += 1;
-
-                const newTime = `${String(Math.min(20, Math.max(7, finalHour))).padStart(2, '0')}:${String(snappedMin).padStart(2, '0')}`;
-                const newDate = col.getAttribute('data-date');
-
-                this.onEventDrop(eventId, newDate, newTime);
+                // Calcul de la tranche horaire la plus proche (au quart d'heure près)
+                const hourOffset = offsetY / this.pixelsPerHour;
+                const targetHourDec = this.startHour + hourOffset;
+                const roundedHour = Math.floor(targetHourDec);
+                const roundedMin = Math.round((targetHourDec - roundedHour) * 4) * 15;
+                
+                let finalH = roundedHour;
+                let finalM = roundedMin;
+                if (finalM >= 60) {
+                    finalH += 1;
+                    finalM = 0;
+                }
+                
+                const timeStr = `${String(Math.max(7, Math.min(20, finalH))).padStart(2, '0')}:${String(finalM).padStart(2, '0')}`;
+                this.onEventDrop(this.draggedEvent, targetDate, timeStr);
             });
         });
     }
 }
+
+// Exposer sur l'objet global
+window.ProCalendar = ProCalendar;

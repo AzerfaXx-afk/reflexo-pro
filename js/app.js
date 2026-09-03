@@ -678,20 +678,31 @@ class StephanieProApp {
             }
         });
 
-        // Calendar controls
+        // Calendar navigation controls
         document.getElementById('calPrevBtn')?.addEventListener('click', () => {
-            this.calendar.prevWeek();
+            this.calendar.prev();
             this.calendar.render(this.data.appointments, this.data.blockedSlots);
         });
 
         document.getElementById('calNextBtn')?.addEventListener('click', () => {
-            this.calendar.nextWeek();
+            this.calendar.next();
             this.calendar.render(this.data.appointments, this.data.blockedSlots);
         });
 
         document.getElementById('calTodayBtn')?.addEventListener('click', () => {
             this.calendar.today();
             this.calendar.render(this.data.appointments, this.data.blockedSlots);
+        });
+
+        // View Mode Toggle (Jour / 3 Jours / Semaine)
+        document.querySelectorAll('.view-mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.getAttribute('data-mode');
+                if (this.calendar) {
+                    this.calendar.setViewMode(mode);
+                    this.calendar.render(this.data.appointments, this.data.blockedSlots);
+                }
+            });
         });
 
         // Zoom in & Zoom out controls

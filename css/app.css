@@ -867,18 +867,21 @@ input, select, textarea {
 /* BLOCS DE RENDEZ-VOUS (CFIXE STYLE AVEC DRAG AND DROP) */
 .event-block {
     position: absolute;
-    left: 4px;
-    right: 4px;
+    left: 3px;
+    right: 3px;
     border-radius: var(--radius-sm);
-    padding: 8px 10px;
+    padding: 6px 8px;
     font-size: 0.8rem;
     cursor: grab;
     z-index: 10;
     overflow: hidden;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     transition: box-shadow 0.2s ease, transform 0.1s ease;
     user-select: none;
     border-left: 4px solid var(--primary);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .event-block:active {
@@ -899,23 +902,30 @@ input, select, textarea {
 .event-time {
     font-size: 0.72rem;
     font-weight: 700;
-    opacity: 0.85;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.2px;
 }
 
 .event-client {
     font-weight: 700;
-    font-size: 0.85rem;
-    margin: 2px 0;
+    font-size: 0.82rem;
+    margin: 2px 0 1px;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .event-service {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    opacity: 0.88;
 }
 
 /* ========================================================================= 
@@ -1473,17 +1483,46 @@ input, select, textarea {
         padding: 10px 0;
     }
 
+    .agenda-controls-bar {
+        padding: 10px 12px;
+        gap: 8px;
+        border-radius: 14px;
+        margin-bottom: 12px;
+    }
+
     .calendar-nav-group {
+        width: 100%;
+        justify-content: space-between;
         gap: 4px;
     }
 
     .calendar-nav-group .btn {
-        padding: 6px 10px;
-        font-size: 0.78rem;
+        padding: 5px 9px;
+        font-size: 0.76rem;
     }
 
     .calendar-period-title {
         font-size: 0.88rem;
+        margin: 0;
+        text-align: center;
+        flex: 1;
+    }
+
+    .agenda-actions-group {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .view-mode-toggle {
+        padding: 2px;
+    }
+
+    .view-mode-btn {
+        padding: 4px 10px;
+        font-size: 0.72rem;
     }
 
     .calendar-zoom-group {
@@ -1492,40 +1531,40 @@ input, select, textarea {
 
     #calendarContainer {
         touch-action: pan-x pan-y pinch-zoom;
-        overflow-x: auto;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow: hidden;
         border-radius: 14px;
         max-height: calc(100vh - 220px);
     }
 
+    .calendar-grid-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x pan-y;
+        border-radius: 14px;
+    }
+
     .calendar-header-days {
-        grid-template-columns: 38px repeat(7, 1fr);
         position: sticky;
         top: 0;
         z-index: 10;
         background: #fff;
     }
     
-    .calendar-grid-body {
-        grid-template-columns: 38px repeat(7, 1fr);
-    }
-    
     .time-slot-label {
         font-size: 0.65rem;
-        padding: 0 2px;
+        padding: 0 4px;
     }
     
     .day-name {
-        font-size: 0.6rem;
+        font-size: 0.68rem;
     }
     
     .day-number {
-        font-size: 0.95rem;
+        font-size: 1.05rem;
     }
 
     .day-col-header {
-        padding: 4px 2px;
+        padding: 8px 4px;
     }
 
     /* ───── SETTINGS: HORAIRES COMPACT SUR MOBILE ───── */

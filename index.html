@@ -190,19 +190,25 @@
                     
                     <div class="agenda-controls-bar">
                         <div class="calendar-nav-group">
-                            <button class="btn btn-outline btn-sm" id="calPrevBtn">
+                            <button class="btn btn-outline btn-sm" id="calPrevBtn" title="Période précédente">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </button>
                             <button class="btn btn-outline btn-sm" id="calTodayBtn">Aujourd'hui</button>
-                            <button class="btn btn-outline btn-sm" id="calNextBtn">
+                            <button class="btn btn-outline btn-sm" id="calNextBtn" title="Période suivante">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
                             <span class="calendar-period-title" id="calendarPeriodTitle">Cette semaine</span>
                         </div>
 
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div class="agenda-actions-group">
+                            <div class="view-mode-toggle" id="calViewModeToggle">
+                                <button type="button" class="view-mode-btn" data-mode="day">Jour</button>
+                                <button type="button" class="view-mode-btn" data-mode="3days">3 Jours</button>
+                                <button type="button" class="view-mode-btn active" data-mode="week">Semaine</button>
+                            </div>
+
                             <button class="btn btn-primary btn-sm" onclick="app.openNewAppointmentModal()">
-                                <i class="fa-solid fa-plus"></i> Ajouter RDV
+                                <i class="fa-solid fa-plus"></i> <span class="btn-text-full">Ajouter RDV</span>
                             </button>
                         </div>
                     </div>
