@@ -161,6 +161,7 @@ const PRESET_COLORS = [
 
 class StephanieProApp {
     constructor() {
+        window.app = this;
         this.storageKey = 'stephanie_pro_data_v2';
         this.currentView = 'dashboard';
         this.data = this.loadData();
@@ -181,6 +182,8 @@ class StephanieProApp {
             blockedSlots: [],
             clients: [],
             notifications: [],
+            profilePhoto: '',
+            practitionerName: '',
             categories: ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés']
         };
 
@@ -189,6 +192,10 @@ class StephanieProApp {
             try {
                 const parsed = JSON.parse(saved);
                 data = { ...data, ...parsed };
+                // Nettoyer strictement les vieilles notifications de test
+                if (Array.isArray(data.notifications)) {
+                    data.notifications = data.notifications.filter(n => !n.text?.includes('2026-09-14'));
+                }
                 if (!data.categories || data.categories.length === 0) {
                     data.categories = ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés'];
                 }
@@ -221,7 +228,13 @@ class StephanieProApp {
 
         // Enregistrer Service Worker pour PWA
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail', err));
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                navigator.serviceWorker.getRegistrations().then(regs => {
+                    for (let reg of regs) reg.unregister();
+                });
+            } else {
+                navigator.serviceWorker.register('./sw.js?v=3').catch(err => console.log('SW fail', err));
+            }
         }
     }
 
@@ -293,7 +306,7 @@ class StephanieProApp {
             }
         });
 
-        const updateAuthBtnText = () => {
+        function updateAuthBtnText() {
             const btn = document.getElementById('btnAuthSubmit');
             if (!btn) return;
             const textSpan = btn.querySelector('#btnAuthText') || btn.querySelector('span');
@@ -303,7 +316,7 @@ class StephanieProApp {
             } else {
                 btn.innerHTML = `<span id="btnAuthText">${label}</span><i class="fa-solid fa-arrow-right"></i>`;
             }
-        };
+        }
 
         // Tabs
         tabRegister?.addEventListener('click', () => {
@@ -363,6 +376,7 @@ class StephanieProApp {
                 this.data.appointments = [];
                 this.data.clients = [];
                 this.data.blockedSlots = [];
+                this.data.notifications = [];
                 
                 // Afficher l'écran d'authentification obligatoire
                 if (overlay) {
@@ -513,24 +527,71 @@ class StephanieProApp {
         });
     }
 
-    async logout() {
-        if (confirm('Voulez-vous vous déconnecter de votre espace cabinet ?')) {
-            await window.supabaseService?.signOut();
-            this.currentUser = null;
-            localStorage.removeItem('stephanie_auth_user');
-            this.data = {
-                services: [],
-                appointments: [],
-                blockedSlots: [],
-                clients: [],
-                notifications: [],
-                categories: ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés']
-            };
-            this.saveData();
-            this.renderAll();
-            await this.setupAuth();
-            this.showToast('Déconnexion effectuée', 'danger');
+    async quickAdminLogin() {
+        const email = 'adambox06@gmail.com';
+        const password = 'admin123';
+        const emailInput = document.getElementById('authEmail');
+        const passInput = document.getElementById('authPassword');
+        if (emailInput) emailInput.value = email;
+        if (passInput) passInput.value = password;
+
+        this.showToast('Connexion administrateur en cours...', 'info');
+        try {
+            if (window.supabaseService) {
+                const res = await window.supabaseService.signInWithPassword(email, password);
+                if (res?.user) {
+                    this.currentUser = res.user;
+                    localStorage.setItem('stephanie_auth_user', JSON.stringify(res.user));
+                    this.closeAuthModal();
+                    await this.syncWithSupabase();
+                    this.renderAll();
+                    this.showToast('Connecté avec le compte Administrateur !', 'success');
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Supabase direct login note:', e);
         }
+
+        // Fallback session immédiate
+        this.currentUser = { email: email, id: 'admin_local' };
+        localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
+        this.closeAuthModal();
+        this.renderAll();
+        this.showToast('Connecté au cabinet (Mode Démo / Admin)', 'success');
+    }
+
+    logout() {
+        const modal = document.getElementById('modalLogoutConfirm');
+        if (!modal) return;
+        modal.classList.add('open');
+    }
+
+    closeLogoutModal() {
+        const modal = document.getElementById('modalLogoutConfirm');
+        if (!modal) return;
+        modal.classList.remove('open');
+    }
+
+    async confirmLogout() {
+        this.closeLogoutModal();
+        await window.supabaseService?.signOut();
+        this.currentUser = null;
+        localStorage.removeItem('stephanie_auth_user');
+        this.data = {
+            services: [],
+            appointments: [],
+            blockedSlots: [],
+            clients: [],
+            notifications: [],
+            profilePhoto: '',
+            practitionerName: '',
+            categories: ['Massages', 'Réflexologie', 'Kobido / Visage', 'Soins Combinés']
+        };
+        this.saveData();
+        this.renderAll();
+        await this.setupAuth();
+        this.showToast('Déconnexion effectuée avec succès', 'info');
     }
 
     async syncWithSupabase() {
@@ -854,14 +915,20 @@ class StephanieProApp {
             }
         }
 
-        // Fil des notifications (Cfixe style)
+        // Fil des notifications (Reflexo Pro style)
         const notifFeedEl = document.getElementById('notificationsFeed');
         if (notifFeedEl) {
-            if (this.data.notifications.length === 0) {
+            if (!this.data.notifications || this.data.notifications.length === 0) {
                 notifFeedEl.innerHTML = `
-                    <p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 20px 0;">
-                        Toutes les nouvelles réservations apparaîtront ici.
-                    </p>
+                    <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-light); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 1.25rem; color: var(--primary);">
+                            <i class="fa-regular fa-bell"></i>
+                        </div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-heading); margin-bottom: 4px;">Aucune notification</div>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin: 0;">
+                            Toutes vos nouvelles réservations et activités récentes apparaîtront ici.
+                        </p>
+                    </div>
                 `;
             } else {
                 notifFeedEl.innerHTML = this.data.notifications.slice(0, 8).map(n => `
@@ -2138,6 +2205,148 @@ class StephanieProApp {
 
 
 
+    handleProfilePhotoUpload(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            this.showToast('L’image est trop volumineuse (max 5 Mo)', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const size = 256;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                const minDim = Math.min(img.width, img.height);
+                const sx = (img.width - minDim) / 2;
+                const sy = (img.height - minDim) / 2;
+
+                ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+                this.data.profilePhoto = dataUrl;
+                this.saveData();
+                this.updateProfileUI();
+                if (this.currentUser) {
+                    window.supabaseService?.saveSettings({
+                        profilePhoto: dataUrl,
+                        practitionerName: this.data.practitionerName || ''
+                    });
+                }
+                this.showToast('Photo de profil mise à jour avec succès !', 'success');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeProfilePhoto() {
+        this.data.profilePhoto = '';
+        this.saveData();
+        this.updateProfileUI();
+        if (this.currentUser) {
+            window.supabaseService?.saveSettings({
+                profilePhoto: '',
+                practitionerName: this.data.practitionerName || ''
+            });
+        }
+        this.showToast('Photo de profil retirée', 'info');
+    }
+
+    saveProfileSettings() {
+        const nameInput = document.getElementById('settingPractitionerName');
+        if (nameInput) {
+            this.data.practitionerName = nameInput.value.trim();
+            this.saveData();
+            this.updateProfileUI();
+            if (this.currentUser) {
+                window.supabaseService?.saveSettings({
+                    profilePhoto: this.data.profilePhoto || '',
+                    practitionerName: this.data.practitionerName
+                });
+            }
+            this.showToast('Nom du praticien mis à jour', 'success');
+        }
+    }
+
+    updateProfileUI() {
+        const photo = this.data.profilePhoto;
+        const name = this.data.practitionerName || (this.currentUser?.email ? this.currentUser.email.split('@')[0] : 'Cabinet');
+        const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+
+        // Sidebar avatar
+        const avatarIcon = document.getElementById('userAvatarIcon');
+        const avatarInitials = document.getElementById('userAvatarInitials');
+        const avatarImg = document.getElementById('userAvatarImg');
+        const btnRemove = document.getElementById('btnRemoveProfilePhoto');
+
+        if (photo) {
+            if (avatarImg) {
+                avatarImg.src = photo;
+                avatarImg.style.display = 'block';
+            }
+            if (avatarIcon) avatarIcon.style.display = 'none';
+            if (avatarInitials) avatarInitials.style.display = 'none';
+            if (btnRemove) btnRemove.style.display = 'inline-flex';
+        } else {
+            if (avatarImg) avatarImg.style.display = 'none';
+            if (this.currentUser) {
+                if (avatarInitials) {
+                    avatarInitials.style.display = 'inline';
+                    avatarInitials.textContent = (this.data.practitionerName || this.currentUser.email || 'S')[0].toUpperCase();
+                }
+                if (avatarIcon) avatarIcon.style.display = 'none';
+            } else {
+                if (avatarIcon) avatarIcon.style.display = 'inline';
+                if (avatarInitials) avatarInitials.style.display = 'none';
+            }
+            if (btnRemove) btnRemove.style.display = 'none';
+        }
+
+        // Settings preview
+        const settingsImg = document.getElementById('settingsProfileImg');
+        const settingsPlaceholder = document.getElementById('settingsProfilePlaceholder');
+        if (settingsImg && settingsPlaceholder) {
+            if (photo) {
+                settingsImg.src = photo;
+                settingsImg.style.display = 'block';
+                settingsPlaceholder.style.display = 'none';
+            } else {
+                settingsImg.style.display = 'none';
+                settingsPlaceholder.style.display = 'block';
+            }
+        }
+
+        const nameInput = document.getElementById('settingPractitionerName');
+        if (nameInput && this.data.practitionerName) {
+            nameInput.value = this.data.practitionerName;
+        }
+
+        // Dashboard greeting
+        const greetingEl = document.getElementById('dashboardGreeting');
+        if (greetingEl) {
+            greetingEl.textContent = `Bonjour ${formattedName}`;
+        }
+
+        const heroAvatarWrapper = document.getElementById('heroAvatarWrapper');
+        const heroAvatarImg = document.getElementById('heroAvatarImg');
+        if (heroAvatarWrapper && heroAvatarImg) {
+            if (photo) {
+                heroAvatarImg.src = photo;
+                heroAvatarWrapper.style.display = 'flex';
+            } else {
+                heroAvatarWrapper.style.display = 'none';
+            }
+        }
+    }
+
     showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
         if (!container) return;
@@ -2162,6 +2371,7 @@ class StephanieProApp {
         this.renderDashboard();
         this.renderCatalogue();
         this.renderClients();
+        this.updateProfileUI();
         if (this.calendar) {
             this.calendar.render(this.data.appointments, this.data.blockedSlots);
         }

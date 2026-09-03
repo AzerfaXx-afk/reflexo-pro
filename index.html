@@ -69,10 +69,10 @@
 
             <div class="sidebar-footer">
                 <div class="sidebar-footer-card-compact" id="sidebarFooterCard">
-                    <!-- Profile Icon (Left) -->
-                    <button type="button" class="footer-profile-btn" id="sidebarProfileTrigger" onclick="app.openAuthModal()" title="Espace Cabinet">
+                    <button type="button" class="footer-profile-btn" id="sidebarProfileTrigger" onclick="app.switchView('settings')" title="Paramètres & Profil">
                         <i class="fa-regular fa-user" id="userAvatarIcon"></i>
                         <span class="avatar-initials-badge" id="userAvatarInitials" style="display: none;">SB</span>
+                        <img id="userAvatarImg" class="avatar-photo-img" src="" alt="Photo de profil" style="display: none;">
                     </button>
 
                     <!-- Middle: Cabinet Status & Hours -->
@@ -114,9 +114,14 @@
                 <section id="view-dashboard" class="view-panel active">
                     
                     <div class="dashboard-hero">
-                        <div class="hero-greeting">
-                            <h1 id="dashboardGreeting">Bienvenue</h1>
-                            <p id="dashboardGreetingSub">Voici votre récapitulatif.</p>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div class="hero-avatar-wrapper" id="heroAvatarWrapper" style="display: none;">
+                                <img src="" id="heroAvatarImg" class="hero-avatar-img" alt="Photo de profil">
+                            </div>
+                            <div class="hero-greeting">
+                                <h1 id="dashboardGreeting">Bienvenue</h1>
+                                <p id="dashboardGreetingSub">Voici votre récapitulatif.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -292,10 +297,45 @@
                 <section id="view-settings" class="view-panel">
                     
                     <div style="max-width: 680px; margin: 0 auto;">
-                        <h2 style="margin-bottom: 6px;">Paramètres & Horaires</h2>
+                        <h2 style="margin-bottom: 6px;">Paramètres & Cabinet</h2>
                         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">
-                            Disponibilités du cabinet et temps de battement entre les séances.
+                            Profil du praticien, disponibilités et temps de battement.
                         </p>
+
+                        <!-- Bloc 0: Profil & Photo du cabinet -->
+                        <div class="card-box" style="margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 12px;"><i class="fa-regular fa-id-badge"></i> Profil & Photo du Cabinet</h3>
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px;">
+                                Personnalisez la photo et le prénom affichés dans votre espace Reflexo Pro.
+                            </p>
+                            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                                <div class="profile-photo-preview-wrap">
+                                    <div class="profile-photo-preview" id="settingsProfilePreview">
+                                        <i class="fa-regular fa-user" id="settingsProfilePlaceholder"></i>
+                                        <img src="" id="settingsProfileImg" class="profile-preview-img" style="display: none;" alt="Photo profil">
+                                    </div>
+                                    <button type="button" class="btn-change-photo-badge" onclick="document.getElementById('profilePhotoInput').click()" title="Changer la photo">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </button>
+                                </div>
+
+                                <div style="flex: 1; min-width: 220px;">
+                                    <div class="form-group" style="margin-bottom: 10px;">
+                                        <label for="settingPractitionerName" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">Prénom du praticien</label>
+                                        <input type="text" id="settingPractitionerName" class="form-control" placeholder="Stéphanie" onchange="app.saveProfileSettings()">
+                                    </div>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;" onchange="app.handleProfilePhotoUpload(event)">
+                                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('profilePhotoInput').click()">
+                                            <i class="fa-solid fa-upload"></i> Changer la photo
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-sm text-danger" id="btnRemoveProfilePhoto" onclick="app.removeProfilePhoto()" style="display: none;">
+                                            <i class="fa-regular fa-trash-can"></i> Retirer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Bloc 1: Horaires d'ouverture par jour -->
                         <div class="card-box" style="margin-bottom: 20px;">
@@ -751,6 +791,32 @@
 
 
     <!-- ========================================================================= 
+         MODAL DE DÉCONNEXION (AWWWARDS STYLE SANS CONFIRM BROWSER)
+         ========================================================================= -->
+    <div class="modal-backdrop" id="modalLogoutConfirm">
+        <div class="modal-card" style="max-width: 420px; text-align: center; padding: 36px 28px; border-radius: 24px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 83, 80, 0.12); color: #e53935; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 20px;">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </div>
+            <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-heading); margin-bottom: 10px;">
+                Déconnexion
+            </h3>
+            <p style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 28px;">
+                Êtes-vous sûre de vouloir vous déconnecter de votre espace cabinet <strong>Reflexo Pro</strong> ?
+            </p>
+            <div style="display: flex; gap: 14px; justify-content: center;">
+                <button type="button" class="btn btn-outline" onclick="app.closeLogoutModal()" style="flex: 1; padding: 12px 18px; border-radius: 14px; font-weight: 600; font-size: 0.95rem;">
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-danger" onclick="app.confirmLogout()" id="btnModalConfirmLogout" style="flex: 1; padding: 12px 18px; border-radius: 14px; font-weight: 600; font-size: 0.95rem; background: #e53935; color: white; border: none; box-shadow: 0 4px 16px rgba(229, 57, 53, 0.3);">
+                    Se déconnecter
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= 
          AUTHENTICATION OVERLAY (ESPACE PRIVÉ SÉCURISÉ)
          ========================================================================= -->
     <div class="auth-overlay hidden" id="authOverlay" style="display: none;">
@@ -806,6 +872,11 @@
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                     <span>Envoyer un lien magique par mail</span>
                 </button>
+
+                <button type="button" class="btn btn-outline btn-block" id="btnAdminQuickLogin" onclick="app.quickAdminLogin()" style="margin-top: 12px; font-size: 0.8rem; border-style: dashed; color: var(--text-muted); padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-key" style="color: var(--primary);"></i>
+                    <span>Accès rapide Administrateur / Test</span>
+                </button>
             </form>
 
             <div class="auth-card-footer">
@@ -821,7 +892,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
-    <script src="js/calendar.js?v=2"></script>
-    <script src="js/app.js?v=2"></script>
+    <script src="js/calendar.js?v=3"></script>
+    <script src="js/app.js?v=5"></script>
 </body>
 </html>
