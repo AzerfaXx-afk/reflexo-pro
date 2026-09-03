@@ -293,12 +293,24 @@ class StephanieProApp {
             }
         });
 
+        const updateAuthBtnText = () => {
+            const btn = document.getElementById('btnAuthSubmit');
+            if (!btn) return;
+            const textSpan = btn.querySelector('#btnAuthText') || btn.querySelector('span');
+            const label = authMode === 'register' ? 'Créer mon compte cabinet' : 'Se connecter au cabinet';
+            if (textSpan) {
+                textSpan.textContent = label;
+            } else {
+                btn.innerHTML = `<span id="btnAuthText">${label}</span><i class="fa-solid fa-arrow-right"></i>`;
+            }
+        };
+
         // Tabs
         tabRegister?.addEventListener('click', () => {
             authMode = 'register';
             tabRegister.classList.add('active');
             tabLogin?.classList.remove('active');
-            if (submitText) submitText.textContent = 'Créer mon compte cabinet';
+            updateAuthBtnText();
             if (alertBox) alertBox.style.display = 'none';
         });
 
@@ -306,7 +318,7 @@ class StephanieProApp {
             authMode = 'login';
             tabLogin.classList.add('active');
             tabRegister?.classList.remove('active');
-            if (submitText) submitText.textContent = 'Se connecter au cabinet';
+            updateAuthBtnText();
             if (alertBox) alertBox.style.display = 'none';
         });
 
@@ -391,14 +403,15 @@ class StephanieProApp {
             if (!email) {
                 if (alertBox) {
                     alertBox.className = 'auth-alert error';
-                    alertBox.textContent = 'Veuillez renseigner votre adresse e-mail.';
+                    alertBox.textContent = 'Veuillez saisir votre adresse email.';
                     alertBox.style.display = 'flex';
                 }
                 return;
             }
             try {
                 btnMagicSubmit.disabled = true;
-                btnMagicSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi en cours...';
+                btnMagicSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi du lien...';
+                if (alertBox) alertBox.style.display = 'none';
                 await window.supabaseService.signInWithOtp(email);
                 if (alertBox) {
                     alertBox.className = 'auth-alert success';
@@ -435,22 +448,30 @@ class StephanieProApp {
 
                 if (authMode === 'register') {
                     const res = await window.supabaseService.signUp(email, password);
-                    // Check if confirmation email was sent or session was created immediately
-                    if (res?.user && !res?.session) {
-                        alertBox.className = 'auth-alert success';
-                        alertBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> <div><strong>Compte créé !</strong><br>Un email de validation a été envoyé à <strong>${email}</strong>.<br>Cliquez sur le lien reçu dans votre boîte de réception pour valider votre compte, puis connectez-vous.</div>`;
-                        alertBox.style.display = 'flex';
-                        setTimeout(() => {
-                            tabLogin?.click();
-                        }, 2500);
-                        return;
-                    } else if (res?.user) {
-                        this.currentUser = res.user;
+                    let sessionUser = res?.user;
+
+                    // Si pas de session directe, tentative d'auto-login immédiate grâce au trigger auto-confirm
+                    if (!res?.session) {
+                        try {
+                            const loginRes = await window.supabaseService.signInWithPassword(email, password);
+                            sessionUser = loginRes?.user || sessionUser;
+                        } catch (e) {
+                            console.log('Auto-login attempt:', e);
+                        }
+                    }
+
+                    if (sessionUser) {
+                        this.currentUser = sessionUser;
                         localStorage.setItem('stephanie_auth_user', JSON.stringify(this.currentUser));
-                        this.showToast('Compte créé et connecté !', 'success');
+                        this.showToast('Compte cabinet créé et connecté !', 'success');
                         this.closeAuthModal();
                         await checkSession();
                         this.syncWithSupabase();
+                    } else {
+                        alertBox.className = 'auth-alert success';
+                        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> <div><strong>Compte créé avec succès !</strong><br>Vous pouvez maintenant vous connecter avec vos identifiants.</div>`;
+                        alertBox.style.display = 'flex';
+                        tabLogin?.click();
                     }
                 } else {
                     const res = await window.supabaseService.signInWithPassword(email, password);
@@ -466,10 +487,13 @@ class StephanieProApp {
                 if (alertBox) {
                     alertBox.className = 'auth-alert error';
                     const msg = err.message || '';
-                    if (msg.toLowerCase().includes('email not confirmed')) {
-                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div><strong>Email non confirmé</strong><br>Veuillez cliquer sur le lien envoyé dans votre boîte de réception pour activer votre compte.</div>`;
+                    if (msg.toLowerCase().includes('user already registered')) {
+                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div><strong>Ce compte existe déjà.</strong><br>Cliquez sur <strong>Connexion</strong> ci-dessus pour vous connecter avec ce mot de passe.</div>`;
+                        tabLogin?.click();
+                    } else if (msg.toLowerCase().includes('email not confirmed')) {
+                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div><strong>Email en attente</strong><br>Veuillez vous reconnecter.</div>`;
                     } else if (msg.toLowerCase().includes('invalid login credentials')) {
-                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>Identifiants incorrects ou compte inexistant.<br>Avez-vous d'abord cliqué sur <strong>Créer un compte</strong> ?</div>`;
+                        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>Mot de passe ou email incorrect.<br>Veuillez vérifier votre saisie.</div>`;
                     } else {
                         alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>${msg || 'Identifiants incorrects.'}</div>`;
                     }
@@ -478,7 +502,7 @@ class StephanieProApp {
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = `<span id="btnAuthText">${authMode === 'register' ? 'Créer mon compte cabinet' : 'Se connecter au cabinet'}</span><i class="fa-solid fa-arrow-right"></i>`;
+                    updateAuthBtnText();
                 }
             }
         });

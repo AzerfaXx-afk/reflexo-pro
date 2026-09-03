@@ -288,9 +288,13 @@ class SupabaseService {
 
     async signUp(email, password) {
         if (!this.client) throw new Error('Supabase non initialisé');
+        const redirectUrl = window.location.origin + window.location.pathname;
         const { data, error } = await this.client.auth.signUp({
             email,
-            password
+            password,
+            options: {
+                emailRedirectTo: redirectUrl
+            }
         });
         if (error) throw error;
         return data;
