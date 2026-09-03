@@ -331,6 +331,141 @@ const AUTHENTIC_SERVICES = [
     }
 ];
 
+// =========================================================================
+// DONNÉES AUTHENTIQUES PAIEMENTS (STRIPE / CFIXÉ) & NOTIFICATIONS (CFIXÉ)
+// =========================================================================
+const AUTHENTIC_PAYMENTS = [
+    {
+        id: "pay_1",
+        clientName: "Florence Meziadi - Florence Meziadi",
+        detail: "Réflexologie plantaire",
+        amount: 65.00,
+        status: "Payé",
+        date: "2026-09-02T14:15:00",
+        formattedDate: "Hier à 14:15",
+        method: "Stripe"
+    },
+    {
+        id: "pay_2",
+        clientName: "Carte cadeau - Lola Gilbert",
+        detail: "Bon cadeau soin 1h",
+        amount: 75.00,
+        status: "Payé",
+        date: "2026-08-30T10:00:00",
+        formattedDate: "30 août",
+        method: "Stripe"
+    },
+    {
+        id: "pay_3",
+        clientName: "Carte cadeau - alexandra verlaque",
+        detail: "Forfait Massages duo / spécial",
+        amount: 180.00,
+        status: "Payé",
+        date: "2026-08-25T16:30:00",
+        formattedDate: "25 août",
+        method: "Stripe"
+    },
+    {
+        id: "pay_4",
+        clientName: "Carte cadeau - Isabelle Girardin",
+        detail: "Soin Kobido Visage & Décolleté",
+        amount: 100.00,
+        status: "Payé",
+        date: "2026-08-20T11:45:00",
+        formattedDate: "20 août",
+        method: "Stripe"
+    },
+    {
+        id: "pay_5",
+        clientName: "Carte cadeau - Tabatha Cuypers",
+        detail: "Massage suédois 1h30",
+        amount: 90.00,
+        status: "Payé",
+        date: "2026-08-15T09:20:00",
+        formattedDate: "15 août",
+        method: "Stripe"
+    },
+    {
+        id: "pay_6",
+        clientName: "Carte cadeau - Laurent Levy",
+        detail: "Massage suédois 1h",
+        amount: 60.00,
+        status: "Payé",
+        date: "2026-08-10T14:00:00",
+        formattedDate: "10 août",
+        method: "Stripe"
+    },
+    {
+        id: "pay_7",
+        clientName: "Carte cadeau - Laurent Levy",
+        detail: "Massage suédois 1h",
+        amount: 60.00,
+        status: "Payé",
+        date: "2026-08-10T14:05:00",
+        formattedDate: "10 août",
+        method: "Stripe"
+    },
+    {
+        id: "pay_8",
+        clientName: "Carte cadeau - Alice Laurent",
+        detail: "Bon cadeau Réflexologie",
+        amount: 75.00,
+        status: "Payé",
+        date: "2026-08-01T17:15:00",
+        formattedDate: "1 août",
+        method: "Stripe"
+    },
+    {
+        id: "pay_9",
+        clientName: "Carte cadeau - Manon Broussard",
+        detail: "Massage suédois 1h",
+        amount: 60.00,
+        status: "Payé",
+        date: "2026-07-28T18:00:00",
+        formattedDate: "28 juil.",
+        method: "Stripe"
+    }
+];
+
+const AUTHENTIC_NOTIFICATIONS = [
+    {
+        id: "notif_1",
+        clientName: "CORBEL Corbel",
+        serviceName: "Massage combiné : réflexologie et suédois 1h",
+        dateTimeStr: "le vendredi 4 septembre 15:30",
+        timestamp: "Il y a environ 14 heures",
+        createdAt: "2026-09-03T04:30:00",
+        appointmentId: "cfixe_488"
+    },
+    {
+        id: "notif_2",
+        clientName: "Anouk Prunaret",
+        serviceName: "Réflexologie palmaire-faciale",
+        dateTimeStr: "le lundi 21 septembre 17:00",
+        timestamp: "Il y a 1 jour",
+        createdAt: "2026-09-02T17:00:00",
+        appointmentId: "cfixe_487"
+    },
+    {
+        id: "notif_3",
+        clientName: "Siouxsie Bech",
+        serviceName: "Massage combiné : réflexologie et suédois 1h30",
+        dateTimeStr: "le mercredi 9 septembre 08:30",
+        timestamp: "Il y a 1 jour",
+        createdAt: "2026-09-02T08:30:00",
+        appointmentId: "cfixe_486"
+    },
+    {
+        id: "notif_4",
+        clientName: "Florence Meziadi",
+        serviceName: "Réflexologie plantaire",
+        dateTimeStr: "le vendredi 4 septembre 12:30",
+        timestamp: "Il y a 2 jours",
+        createdAt: "2026-09-01T12:30:00",
+        appointmentId: "cfixe_485"
+    }
+];
+
 class StephanieProApp {
     constructor() {
         window.app = this;
@@ -1304,19 +1439,15 @@ class StephanieProApp {
         const countEl = document.getElementById('statTodayCount');
         if (countEl) countEl.textContent = todayAppointments.length;
 
-        // Total CA semaine
-        const weekMonday = this.calendar ? this.calendar.currentWeekStart : new Date();
-        const weekDaysIso = [];
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(weekMonday);
-            d.setDate(d.getDate() + i);
-            weekDaysIso.push(d.toISOString().split('T')[0]);
-        }
-        const weekAppointments = this.data.appointments.filter(a => weekDaysIso.includes(a.date));
-        const weekRevenue = weekAppointments.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+        // Stat 2 : Dernier paiement reçu (style Cfixé / Stripe)
+        const payments = this.getPaymentsData();
+        const lastPayment = payments[0] || { amount: 65, clientName: "Florence Meziadi", detail: "Réflexologie plantaire" };
         
-        const revEl = document.getElementById('statWeekRevenue');
-        if (revEl) revEl.textContent = `${weekRevenue} €`;
+        const lastPayAmountEl = document.getElementById('statLastPaymentAmount');
+        if (lastPayAmountEl) lastPayAmountEl.textContent = `${Number(lastPayment.amount).toFixed(2)} €`;
+
+        const lastPayClientEl = document.getElementById('statLastPaymentClient');
+        if (lastPayClientEl) lastPayClientEl.textContent = `${lastPayment.clientName} • ${lastPayment.detail}`;
 
         const totalClientsEl = document.getElementById('statTotalClients');
         if (totalClientsEl) totalClientsEl.textContent = this.data.clients.length;
@@ -1364,79 +1495,155 @@ class StephanieProApp {
             }
         }
 
-        // Fil des dernières réservations & notifications (Reflexo Pro style)
+        // Fil des dernières notifications (style Cfixé exact)
         const notifFeedEl = document.getElementById('notificationsFeed');
         if (notifFeedEl) {
-            // Extraire les réservations les plus récentes (excluant les blocs "Libre")
-            const validAppointments = [...(this.data.appointments || [])]
-                .filter(a => a.clientName && a.clientName !== 'Libre');
+            const notifs = this.getNotificationsData();
 
-            // Trier par date/heure
-            validAppointments.sort((a, b) => {
-                const dtA = (a.date || '') + ' ' + (a.time || '');
-                const dtB = (b.date || '') + ' ' + (b.time || '');
-                return dtB.localeCompare(dtA);
-            });
-
-            const recentAppts = validAppointments.slice(0, 8);
-
-            if (recentAppts.length === 0 && (!this.data.notifications || this.data.notifications.length === 0)) {
+            if (notifs.length === 0) {
                 notifFeedEl.innerHTML = `
                     <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
-                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-light); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 1.25rem; color: var(--primary);">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-light); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 1.25rem; color: #38a3a5;">
                             <i class="fa-regular fa-bell"></i>
                         </div>
-                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-heading); margin-bottom: 4px;">Aucune réservation récente</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-heading); margin-bottom: 4px;">Aucune notification récente</div>
                         <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin: 0;">
-                            Toutes vos nouvelles réservations et activités récentes apparaîtront ici en direct.
+                            Toutes vos nouvelles réservations apparaîtront ici en direct.
                         </p>
                     </div>
                 `;
             } else {
-                let itemsHtml = '';
-
-                // Si des notifications explicites existent
-                if (this.data.notifications && this.data.notifications.length > 0) {
-                    itemsHtml += this.data.notifications.slice(0, 3).map(n => `
-                        <div class="notif-item highlight" style="border-left: 3px solid var(--primary); background: rgba(95, 158, 160, 0.05);">
-                            <div class="notif-icon-bubble" style="background: rgba(95, 158, 160, 0.15); color: var(--primary);"><i class="fa-solid fa-bell"></i></div>
-                            <div class="notif-body">
-                                <div class="notif-text" style="font-weight: 600; font-size: 0.86rem; color: var(--text-heading);">${n.text}</div>
-                                <div class="notif-time" style="font-size: 0.74rem; color: var(--text-muted);">${n.time}</div>
-                            </div>
+                notifFeedEl.innerHTML = notifs.map(n => `
+                    <div class="cfixe-notif-item" onclick="app.onNotificationClicked('${n.id}')" title="Cliquer pour afficher les détails du rendez-vous">
+                        <div class="cfixe-notif-text">
+                            <strong class="cfixe-notif-name">${n.clientName}</strong> a pris un rendez-vous 
+                            <span class="cfixe-notif-service">"${n.serviceName}"</span> 
+                            ${n.dateTimeStr}, <span class="cfixe-notif-action">cliquez pour confirmer le rdv</span>
                         </div>
-                    `).join('');
-                }
-
-                // Afficher les rendez-vous récents avec style pro
-                itemsHtml += recentAppts.map(a => {
-                    const isUpcoming = a.date >= todayIso;
-                    const dateFormatted = new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-                    return `
-                        <div class="notif-item appointment-item-feed" onclick="app.openAppointmentDetails('${a.id}')" style="cursor: pointer; transition: all 0.2s ease; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px;">
-                            <div class="notif-icon-bubble" style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: ${isUpcoming ? 'rgba(16, 185, 129, 0.12)' : 'rgba(95, 158, 160, 0.12)'}; color: ${isUpcoming ? '#059669' : 'var(--primary)'};">
-                                <i class="fa-solid ${isUpcoming ? 'fa-calendar-check' : 'fa-clock-rotate-left'}"></i>
-                            </div>
-                            <div class="notif-body" style="flex: 1; min-width: 0;">
-                                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 6px;">
-                                    <div class="notif-text" style="font-weight: 700; color: var(--text-heading); font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.clientName}</div>
-                                    <span style="font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; white-space: nowrap; background: ${isUpcoming ? '#ECFDF5' : '#F1F5F9'}; color: ${isUpcoming ? '#059669' : '#64748B'};">
-                                        ${isUpcoming ? 'À venir' : 'Passé'}
-                                    </span>
-                                </div>
-                                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-top: 1px;">
-                                    ${a.serviceName} • ${Number(a.price).toFixed(2)} €
-                                </div>
-                                <div class="notif-time" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                                    <i class="fa-regular fa-clock" style="font-size: 0.7rem;"></i> ${dateFormatted} à ${a.time} (${a.duration} min)
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-                notifFeedEl.innerHTML = itemsHtml;
+                        <div class="cfixe-notif-time">${n.timestamp}</div>
+                    </div>
+                `).join('');
             }
+        }
+    }
+
+    /* =========================================================================
+       GESTION DES PAIEMENTS (STRIPE / CFIXÉ)
+       ========================================================================= */
+    getPaymentsData() {
+        try {
+            const raw = localStorage.getItem('reflexo_pro_payments');
+            if (raw) return JSON.parse(raw);
+        } catch (e) {
+            console.warn('Erreur lecture reflexo_pro_payments', e);
+        }
+        return [...AUTHENTIC_PAYMENTS];
+    }
+
+    savePaymentsData(payments) {
+        try {
+            localStorage.setItem('reflexo_pro_payments', JSON.stringify(payments));
+        } catch (e) {
+            console.warn('Erreur sauvegarde reflexo_pro_payments', e);
+        }
+    }
+
+    openPaymentsModal() {
+        const modal = document.getElementById('modalPayments');
+        if (!modal) return;
+        const searchInput = document.getElementById('paymentsSearchInput');
+        if (searchInput) searchInput.value = '';
+        this.renderPaymentsList('');
+        modal.classList.add('open');
+    }
+
+    filterPaymentsList(query) {
+        this.renderPaymentsList(query);
+    }
+
+    renderPaymentsList(query = '') {
+        const container = document.getElementById('paymentsListContainer');
+        if (!container) return;
+
+        const payments = this.getPaymentsData();
+        const q = (query || '').toLowerCase().trim();
+
+        const filtered = payments.filter(p => 
+            !q || 
+            (p.clientName || '').toLowerCase().includes(q) || 
+            (p.detail || '').toLowerCase().includes(q) ||
+            (p.formattedDate || '').toLowerCase().includes(q)
+        );
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--bg-light); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; color: var(--text-muted);">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-heading);">Aucun paiement trouvé</div>
+                    <p style="font-size: 0.8rem; margin: 4px 0 0 0;">Aucun règlement ne correspond à votre recherche "${query}".</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filtered.map(p => `
+            <div class="payment-row-card">
+                <div class="payment-row-info">
+                    <span class="payment-row-client">${p.clientName}</span>
+                    <span class="payment-row-sub">${p.detail}</span>
+                    <span class="payment-row-date">${p.formattedDate || ''}</span>
+                </div>
+                <div class="payment-pill-badge">
+                    <span>${Number(p.amount).toFixed(2)}€ Payé</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    /* =========================================================================
+       GESTION DES NOTIFICATIONS CFIXÉ
+       ========================================================================= */
+    getNotificationsData() {
+        try {
+            const raw = localStorage.getItem('reflexo_pro_notifications');
+            if (raw) return JSON.parse(raw);
+        } catch (e) {
+            console.warn('Erreur lecture reflexo_pro_notifications', e);
+        }
+        return [...AUTHENTIC_NOTIFICATIONS];
+    }
+
+    saveNotificationsData(notifs) {
+        try {
+            localStorage.setItem('reflexo_pro_notifications', JSON.stringify(notifs));
+        } catch (e) {
+            console.warn('Erreur sauvegarde reflexo_pro_notifications', e);
+        }
+    }
+
+    onNotificationClicked(notifId) {
+        const notifs = this.getNotificationsData();
+        const notif = notifs.find(n => n.id === notifId);
+        if (!notif) return;
+
+        // Trouver le rendez-vous correspondant
+        let appt = null;
+        if (notif.appointmentId) {
+            appt = (this.data.appointments || []).find(a => a.id === notif.appointmentId);
+        }
+        if (!appt && notif.clientName) {
+            appt = (this.data.appointments || []).find(a => 
+                (a.clientName || '').toLowerCase().trim() === notif.clientName.toLowerCase().trim()
+            );
+        }
+
+        if (appt) {
+            this.openAppointmentDetails(appt.id);
+        } else {
+            this.showToast(`Rendez-vous : ${notif.clientName} - ${notif.serviceName}`, 'info');
+            this.switchView('agenda');
         }
     }
 
@@ -1497,16 +1704,108 @@ class StephanieProApp {
 
     /* GESTION AVANCÉE DES PACKS & COMPOSITIONS (MODAL AWWWARDS) */
     populatePackServiceSelector() {
-        const selector = document.getElementById('packServiceSelector');
-        if (!selector) return;
-        selector.innerHTML = (this.data.services || []).map(s => `
-            <option value="${s.name}">${s.name} (${s.duration} min - ${s.price} €)</option>
-        `).join('');
+        const massagesList = document.getElementById('packDropdownMassagesList');
+        const reflexoList = document.getElementById('packDropdownReflexoList');
+        if (!massagesList || !reflexoList) return;
+
+        // Séparer Massages et Réflexologie
+        const massages = (this.data.services || []).filter(s => 
+            !((s.category || '').toLowerCase().includes('réflexo') || (s.category || '').toLowerCase().includes('reflexo'))
+        );
+        const reflexo = (this.data.services || []).filter(s => 
+            (s.category || '').toLowerCase().includes('réflexo') || (s.category || '').toLowerCase().includes('reflexo')
+        );
+
+        // Tri exact selon l'ordre officiel demandé
+        const serviceOrderMap = {};
+        AUTHENTIC_SERVICES.forEach((s, idx) => {
+            const norm = s.name.toLowerCase().replace(/\s+/g, ' ').trim();
+            serviceOrderMap[norm] = idx;
+        });
+
+        const sortByIndex = (a, b) => {
+            const normA = (a.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            const normB = (b.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            const idxA = serviceOrderMap[normA] !== undefined ? serviceOrderMap[normA] : 999;
+            const idxB = serviceOrderMap[normB] !== undefined ? serviceOrderMap[normB] : 999;
+            return idxA - idxB;
+        };
+
+        massages.sort(sortByIndex);
+        reflexo.sort(sortByIndex);
+
+        const renderOption = (s) => `
+            <div class="custom-select-option" data-name="${s.name}" onclick="app.selectPackServiceOption('${encodeURIComponent(s.name)}')">
+                <div class="custom-select-option-left">
+                    <span class="custom-trigger-dot" style="background-color: ${s.colorBorder || '#5F9EA0'};"></span>
+                    <span class="custom-select-option-name">${s.name}</span>
+                </div>
+                <div class="custom-select-option-right">
+                    <span class="custom-select-option-dur">${s.duration} min</span>
+                    <span class="custom-select-option-price">${Number(s.price).toFixed(2)} €</span>
+                </div>
+            </div>
+        `;
+
+        massagesList.innerHTML = massages.map(renderOption).join('');
+        reflexoList.innerHTML = reflexo.map(renderOption).join('');
+
+        // Sélectionner par défaut le premier soin (Massage myofacial)
+        if (massages.length > 0) {
+            this.selectPackServiceOption(encodeURIComponent(massages[0].name));
+        }
+    }
+
+    togglePackServiceDropdown(forceState = null) {
+        const dd = document.getElementById('customPackServiceDropdown');
+        if (!dd) return;
+        if (forceState !== null) {
+            dd.classList.toggle('open', forceState);
+        } else {
+            dd.classList.toggle('open');
+        }
+    }
+
+    selectPackServiceOption(encodedName) {
+        const name = decodeURIComponent(encodedName);
+        const service = (this.data.services || []).find(s => (s.name || '').toLowerCase().replace(/\s+/g, ' ').trim() === name.toLowerCase().replace(/\s+/g, ' ').trim());
+        if (!service) return;
+
+        const hiddenInput = document.getElementById('packSelectedServiceName');
+        const triggerDot = document.getElementById('packTriggerDot');
+        const triggerName = document.getElementById('packTriggerName');
+        const triggerBadges = document.getElementById('packTriggerBadges');
+        const triggerDur = document.getElementById('packTriggerDur');
+        const triggerPrice = document.getElementById('packTriggerPrice');
+
+        if (hiddenInput) hiddenInput.value = service.name;
+        if (triggerDot) triggerDot.style.backgroundColor = service.colorBorder || '#5F9EA0';
+        if (triggerName) triggerName.textContent = service.name;
+        if (triggerBadges) triggerBadges.style.display = 'flex';
+        if (triggerDur) triggerDur.textContent = `${service.duration} min`;
+        if (triggerPrice) triggerPrice.textContent = `${Number(service.price).toFixed(2)} €`;
+
+        // Marquer l'élément actif
+        document.querySelectorAll('.custom-select-option').forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.name === service.name);
+        });
+
+        this.togglePackServiceDropdown(false);
+    }
+
+    setPackDraftQty(qty) {
+        const hiddenQty = document.getElementById('packServiceQtyValue');
+        if (hiddenQty) hiddenQty.value = qty;
+
+        document.querySelectorAll('#packQtyPicker .qty-pill-btn').forEach(btn => {
+            btn.classList.toggle('active', Number(btn.dataset.qty) === Number(qty));
+        });
     }
 
     openNewPackModal() {
         this.editingPackId = null;
         this.packDraftItems = [];
+        this.setPackDraftQty(6);
         this.populatePackServiceSelector();
 
         const modal = document.getElementById('modalNewPack');
@@ -1528,6 +1827,7 @@ class StephanieProApp {
 
         this.editingPackId = id;
         this.packDraftItems = [...(pack.items || [])];
+        this.setPackDraftQty(6);
         this.populatePackServiceSelector();
 
         const modal = document.getElementById('modalNewPack');
@@ -1544,16 +1844,20 @@ class StephanieProApp {
     }
 
     addPrestationToPackBuilder() {
-        const selector = document.getElementById('packServiceSelector');
-        const qtySelector = document.getElementById('packServiceQty');
-        if (!selector || !qtySelector) return;
+        const hiddenInput = document.getElementById('packSelectedServiceName');
+        const hiddenQty = document.getElementById('packServiceQtyValue');
+        const srvName = hiddenInput ? hiddenInput.value.trim() : '';
+        const qty = hiddenQty ? Number(hiddenQty.value) || 1 : 1;
 
-        const srvName = selector.value;
-        const qty = qtySelector.value;
-        if (!srvName) return;
+        if (!srvName) {
+            this.showToast('Veuillez sélectionner une prestation.', 'danger');
+            this.togglePackServiceDropdown(true);
+            return;
+        }
 
         this.packDraftItems.push(`x${qty} - ${srvName}`);
         this.renderPackDraftPills();
+        this.showToast(`✨ Ajouté au pack : x${qty} - ${srvName}`, 'success');
     }
 
     removePrestationFromPackDraft(index) {
@@ -2059,6 +2363,14 @@ class StephanieProApp {
         document.getElementById('formBlockSlot')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveBlockedSlot();
+        });
+
+        // Fermer le custom dropdown si clic à l'extérieur
+        document.addEventListener('click', (e) => {
+            const dd = document.getElementById('customPackServiceDropdown');
+            if (dd && !dd.contains(e.target)) {
+                dd.classList.remove('open');
+            }
         });
 
         // Recherche Clients

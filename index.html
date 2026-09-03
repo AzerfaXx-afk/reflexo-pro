@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS App -->
-    <link rel="stylesheet" href="css/app.css?v=11">
+    <link rel="stylesheet" href="css/app.css?v=13">
 </head>
 <body>
 
@@ -176,13 +176,22 @@
                             </div>
                         </div>
 
-                        <div class="stat-card">
-                            <div class="stat-icon-wrapper icon-gold">
-                                <i class="fa-solid fa-coins"></i>
+                        <div class="stat-card stat-card-clickable" id="statCardLastPayment" onclick="app.openPaymentsModal()" title="Cliquer pour voir l'historique des paiements reçus">
+                            <div class="stat-icon-wrapper icon-emerald">
+                                <i class="fa-solid fa-credit-card"></i>
                             </div>
-                            <div class="stat-content">
-                                <span class="stat-value" id="statWeekRevenue">0 €</span>
-                                <span class="stat-label">Chiffre d'affaires estimé (semaine)</span>
+                            <div class="stat-content" style="flex: 1;">
+                                <div style="display: flex; align-items: baseline; gap: 8px;">
+                                    <span class="stat-value" id="statLastPaymentAmount">65.00 €</span>
+                                    <span class="badge-paye-pill">Payé</span>
+                                </div>
+                                <span class="stat-label">Dernier paiement</span>
+                                <span class="stat-sublabel" id="statLastPaymentClient" style="font-size: 0.76rem; color: var(--primary); font-weight: 500; margin-top: 2px;">
+                                    Florence Meziadi • Réflexologie
+                                </span>
+                            </div>
+                            <div class="stat-card-arrow" style="color: var(--text-muted); font-size: 0.85rem; margin-left: auto;">
+                                <i class="fa-solid fa-chevron-right"></i>
                             </div>
                         </div>
 
@@ -214,12 +223,18 @@
                         </div>
 
                         <!-- Colonne Droite : Fil des notifications (style Cfixe) -->
-                        <div class="card-box">
-                            <div class="card-box-header">
-                                <h3><i class="fa-regular fa-bell"></i> Dernières réservations</h3>
+                        <div class="card-box card-box-notifications" style="display: flex; flex-direction: column;">
+                            <div class="cfixe-notif-header">
+                                <h3 class="cfixe-notif-title">Dernières notifications</h3>
+                                <div class="cfixe-notif-divider"></div>
                             </div>
-                            <div class="notifications-feed" id="notificationsFeed">
-                                <!-- Généré dynamiquement -->
+                            <div class="notifications-feed cfixe-feed" id="notificationsFeed">
+                                <!-- Notifications style Cfixé générées en JS -->
+                            </div>
+                            <div class="cfixe-notif-footer">
+                                <button type="button" class="cfixe-tout-voir-btn" onclick="app.switchView('agenda')">
+                                    Tout voir <i class="fa-solid fa-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -760,7 +775,7 @@
          MODAL 4B : CRÉER / MODIFIER UN PACK (AVEC COMPOSITION DE PRESTATIONS)
          ========================================================================= -->
     <div class="modal-backdrop" id="modalNewPack">
-        <div class="modal-card" style="max-width: 540px;">
+        <div class="modal-card" style="max-width: 540px; overflow: visible;">
             <div class="modal-header">
                 <h3><i class="fa-solid fa-boxes-stacked" style="color: var(--primary); margin-right: 6px;"></i> <span id="packModalTitle">Nouveau Pack / Forfait</span></h3>
                 <button class="modal-close-btn" type="button"><i class="fa-solid fa-xmark"></i></button>
@@ -780,31 +795,63 @@
 
                 <!-- COMPOSITION DES PRESTATIONS DU PACK -->
                 <div class="form-group" style="margin-top: 20px;">
-                    <label style="display: flex; justify-content: space-between; align-items: baseline;">
-                        <span>Prestations incluses dans le pack</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Composez votre formule sur-mesure</span>
+                    <label style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                        <span style="font-weight: 600;">Prestations incluses dans le pack</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Sélectionnez et ajoutez vos soins</span>
                     </label>
 
-                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                        <select class="form-control" id="packServiceSelector" style="flex: 1;">
-                            <!-- Options remplies dynamiquement avec les soins actuels -->
-                        </select>
-                        <select class="form-control" id="packServiceQty" style="width: 80px;">
-                            <option value="1">x1</option>
-                            <option value="2">x2</option>
-                            <option value="3">x3</option>
-                            <option value="4">x4</option>
-                            <option value="5">x5</option>
-                            <option value="6" selected>x6</option>
-                            <option value="10">x10</option>
-                        </select>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="app.addPrestationToPackBuilder()" style="padding: 0 14px; white-space: nowrap;">
-                            <i class="fa-solid fa-plus"></i> Ajouter
+                    <!-- CUSTOM AWWWARDS DROPDOWN TRIGGER & PANEL -->
+                    <div class="custom-awwwards-select" id="customPackServiceDropdown">
+                        <div class="custom-select-trigger" id="packServiceTrigger" onclick="app.togglePackServiceDropdown()">
+                            <div class="custom-trigger-content" id="packServiceTriggerContent">
+                                <span class="custom-trigger-dot" id="packTriggerDot" style="background-color: #5F9EA0;"></span>
+                                <span class="custom-trigger-name" id="packTriggerName">Choisir une prestation...</span>
+                                <span class="custom-trigger-badges" id="packTriggerBadges" style="display: none;">
+                                    <span class="custom-trigger-dur" id="packTriggerDur">-- min</span>
+                                    <span class="custom-trigger-price" id="packTriggerPrice">-- €</span>
+                                </span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down custom-trigger-chevron"></i>
+                        </div>
+
+                        <!-- Dropdown Panel avec catégories Massages et Réflexologie -->
+                        <div class="custom-select-panel" id="packServicePanel">
+                            <div class="custom-select-group-header">
+                                <span><i class="fa-solid fa-spa"></i> Massages</span>
+                                <span class="group-count">12</span>
+                            </div>
+                            <div id="packDropdownMassagesList"></div>
+
+                            <div class="custom-select-group-header">
+                                <span><i class="fa-solid fa-leaf"></i> Réflexologie</span>
+                                <span class="group-count">3</span>
+                            </div>
+                            <div id="packDropdownReflexoList"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="packSelectedServiceName" value="">
+
+                    <!-- LIGNE DE QUANTITÉ ET D'AJOUT -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.80rem; font-weight: 600; color: var(--text-muted);">Quantité :</span>
+                            <div class="pack-qty-picker" id="packQtyPicker">
+                                <button type="button" class="qty-pill-btn" data-qty="1" onclick="app.setPackDraftQty(1)">x1</button>
+                                <button type="button" class="qty-pill-btn" data-qty="2" onclick="app.setPackDraftQty(2)">x2</button>
+                                <button type="button" class="qty-pill-btn" data-qty="3" onclick="app.setPackDraftQty(3)">x3</button>
+                                <button type="button" class="qty-pill-btn" data-qty="5" onclick="app.setPackDraftQty(5)">x5</button>
+                                <button type="button" class="qty-pill-btn active" data-qty="6" onclick="app.setPackDraftQty(6)">x6</button>
+                                <button type="button" class="qty-pill-btn" data-qty="10" onclick="app.setPackDraftQty(10)">x10</button>
+                            </div>
+                            <input type="hidden" id="packServiceQtyValue" value="6">
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="app.addPrestationToPackBuilder()" style="padding: 7px 16px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-plus"></i> Ajouter au pack
                         </button>
                     </div>
 
                     <!-- Liste des prestations actuellement ajoutées au pack (pilules cyan) -->
-                    <div id="packCompositionPillsContainer" style="min-height: 48px; padding: 10px; background: var(--bg-light); border-radius: 12px; border: 1.5px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                    <div id="packCompositionPillsContainer" style="min-height: 52px; padding: 10px; background: var(--bg-light); border-radius: 12px; border: 1.5px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                         <!-- Pilules générées en JS -->
                     </div>
                 </div>
@@ -818,6 +865,53 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= 
+         MODAL 4C : DERNIERS PAIEMENTS (STYLE CFIXE / STRIPE / AWWWARDS)
+         ========================================================================= -->
+    <div class="modal-backdrop" id="modalPayments">
+        <div class="modal-card" style="max-width: 620px; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
+            <div class="modal-header" style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.06);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                        <i class="fa-solid fa-credit-card"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.2rem; color: var(--text-heading);">Derniers paiements</h3>
+                        <p style="margin: 0; font-size: 0.78rem; color: var(--text-muted);">Suivi des virements Stripe et règlements reçus</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" type="button" onclick="document.getElementById('modalPayments').classList.remove('open')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Bandeau Virements à venir (Identique Cfixé) -->
+            <div class="stripe-payout-banner">
+                <div class="stripe-payout-left">
+                    <span class="stripe-payout-label">Virements à venir :</span>
+                    <span class="stripe-payout-amount" id="stripePayoutAmount">62.87 €</span>
+                </div>
+                <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" class="stripe-payout-btn" title="Ouvrir le tableau de bord Stripe">
+                    <span class="stripe-badge-s">S</span>
+                    <span>Voir mon compte</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem; opacity: 0.8;"></i>
+                </a>
+            </div>
+
+            <!-- Barre de Recherche Client / Prestation -->
+            <div style="position: relative; margin-bottom: 14px;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                <input type="text" id="paymentsSearchInput" class="form-control" placeholder="Rechercher un client ou une prestation..." oninput="app.filterPaymentsList(this.value)" style="padding-left: 38px; border-radius: 10px; font-size: 0.88rem;">
+            </div>
+
+            <!-- Liste scrollable des paiements -->
+            <div class="payments-list-scroll" id="paymentsListContainer">
+                <!-- Cartes de paiement générées dynamiquement en JS -->
+            </div>
         </div>
     </div>
 
@@ -1125,6 +1219,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js?v=6"></script>
     <script src="js/calendar.js?v=4"></script>
-    <script src="js/app.js?v=21"></script>
+    <script src="js/app.js?v=23"></script>
 </body>
 </html>

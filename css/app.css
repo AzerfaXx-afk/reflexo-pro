@@ -3739,6 +3739,573 @@ input, select, textarea {
     }
 }
 
+/* ========================================================================= 
+   CUSTOM AWWWARDS SELECT DROPDOWN (PACK BUILDER)
+   ========================================================================= */
+#modalNewPack .modal-card {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+}
+
+.custom-awwwards-select {
+    position: relative;
+    width: 100%;
+    user-select: none;
+}
+
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--bg-light, #F8FAFC);
+    border: 1.5px solid var(--border-color, #CBD5E1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-select-trigger:hover {
+    background: #ffffff;
+    border-color: #5F9EA0;
+    box-shadow: 0 3px 12px rgba(95, 158, 160, 0.12);
+}
+
+.custom-awwwards-select.open .custom-select-trigger {
+    background: #ffffff;
+    border-color: #5F9EA0;
+    box-shadow: 0 0 0 3px rgba(95, 158, 160, 0.22);
+}
+
+.custom-trigger-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+    flex: 1;
+}
+
+.custom-trigger-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.custom-trigger-name {
+    font-size: 0.90rem;
+    font-weight: 600;
+    color: #1E293B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-trigger-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.custom-trigger-dur {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: #64748B;
+    background: rgba(100, 116, 139, 0.08);
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+
+.custom-trigger-price {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #246B74;
+    background: #E6F5F6;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.custom-trigger-chevron {
+    font-size: 0.8rem;
+    color: #94A3B8;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+}
+
+.custom-awwwards-select.open .custom-trigger-chevron {
+    transform: rotate(180deg);
+    color: #5F9EA0;
+}
+
+/* PANNEAU DÉROULANT */
+.custom-select-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1.5px solid rgba(95, 158, 160, 0.28);
+    border-radius: 14px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.05);
+    max-height: 290px;
+    overflow-y: auto;
+    z-index: 1050;
+    display: none;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.99);
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-awwwards-select.open .custom-select-panel {
+    display: block;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.custom-select-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-select-panel::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 6px;
+}
+.custom-select-panel::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+.custom-select-group-header {
+    padding: 9px 14px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #437D84;
+    background: #F1F8F9;
+    border-bottom: 1px solid rgba(95, 158, 160, 0.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.custom-select-group-header .group-count {
+    background: rgba(95, 158, 160, 0.15);
+    color: #246B74;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.70rem;
+}
+
+.custom-select-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #F1F5F9;
+    transition: all 0.15s ease;
+}
+
+.custom-select-option:last-child {
+    border-bottom: none;
+}
+
+.custom-select-option:hover {
+    background: #F0F9FA;
+    padding-left: 18px;
+}
+
+.custom-select-option.selected {
+    background: #E5F4F5;
+}
+
+.custom-select-option-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.custom-select-option-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1E293B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-select-option-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.custom-select-option-dur {
+    font-size: 0.73rem;
+    font-weight: 500;
+    color: #64748B;
+    background: #F1F5F9;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+
+.custom-select-option-price {
+    font-size: 0.80rem;
+    font-weight: 700;
+    color: #246B74;
+    background: rgba(95, 158, 160, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+/* QUANTITY PILLS */
+.pack-qty-picker {
+    display: inline-flex;
+    gap: 4px;
+    background: #F1F5F9;
+    padding: 3px;
+    border-radius: 24px;
+    border: 1px solid #E2E8F0;
+}
+
+.qty-pill-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748B;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.qty-pill-btn:hover {
+    color: #0F172A;
+}
+
+.qty-pill-btn.active {
+    background: #5F9EA0;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(95, 158, 160, 0.35);
+}
+
+/* ========================================================================= 
+   STAT CARD : DERNIER PAIEMENT & BADGES
+   ========================================================================= */
+.icon-emerald {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+
+.stat-card-clickable {
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px -5px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.badge-paye-pill {
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #059669;
+    background: rgba(16, 185, 129, 0.14);
+    padding: 2px 7px;
+    border-radius: 9999px;
+    letter-spacing: 0.02em;
+    display: inline-block;
+}
+
+/* ========================================================================= 
+   CFIXE NOTIFICATIONS FEED (COLONNE DROITE DASHBOARD)
+   ========================================================================= */
+.cfixe-notif-header {
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.cfixe-notif-title {
+    font-family: 'Playfair Display', serif !important;
+    font-style: italic !important;
+    font-size: 1.35rem !important;
+    font-weight: 600 !important;
+    color: #38a3a5 !important;
+    margin: 0 0 8px 0 !important;
+    letter-spacing: 0.01em;
+}
+
+.cfixe-notif-divider {
+    height: 2px;
+    background: #5F9EA0;
+    width: 100%;
+    margin: 0 auto;
+    opacity: 0.65;
+}
+
+.cfixe-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.cfixe-feed::-webkit-scrollbar {
+    width: 5px;
+}
+
+.cfixe-feed::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.cfixe-feed::-webkit-scrollbar-thumb {
+    background: rgba(95, 158, 160, 0.28);
+    border-radius: 10px;
+}
+
+.cfixe-feed::-webkit-scrollbar-thumb:hover {
+    background: #5F9EA0;
+}
+
+.cfixe-notif-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: transparent;
+    border-left: 2.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.cfixe-notif-item:hover {
+    background: rgba(95, 158, 160, 0.07);
+    border-left-color: #5F9EA0;
+    transform: translateX(2px);
+}
+
+.cfixe-notif-text {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.cfixe-notif-name {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.cfixe-notif-service {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.cfixe-notif-action {
+    color: #5F9EA0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-size: 0.84rem;
+    font-weight: 500;
+}
+
+.cfixe-notif-time {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.cfixe-notif-footer {
+    margin-top: 14px;
+    text-align: right;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.04);
+}
+
+.cfixe-tout-voir-btn {
+    background: none;
+    border: none;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s;
+    padding: 4px 8px;
+}
+
+.cfixe-tout-voir-btn:hover {
+    color: #5F9EA0;
+}
+
+/* ========================================================================= 
+   DERNIERS PAIEMENTS & STRIPE MODAL (EXACT CFIXE)
+   ========================================================================= */
+.stripe-payout-banner {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.stripe-payout-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stripe-payout-label {
+    font-size: 0.82rem;
+    color: #1e3a8a;
+    font-weight: 500;
+}
+
+.stripe-payout-amount {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #172554;
+    font-family: var(--font-heading);
+}
+
+.stripe-payout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    color: #635bff;
+    font-weight: 600;
+    font-size: 0.84rem;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(99, 91, 255, 0.3);
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(99, 91, 255, 0.08);
+    transition: all 0.2s ease;
+}
+
+.stripe-payout-btn:hover {
+    background: #635bff;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 91, 255, 0.25);
+}
+
+.stripe-badge-s {
+    background: #635bff;
+    color: #ffffff;
+    font-weight: 800;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-family: sans-serif;
+}
+
+.stripe-payout-btn:hover .stripe-badge-s {
+    background: #ffffff;
+    color: #635bff;
+}
+
+.payments-list-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 440px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.payments-list-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.payments-list-scroll::-webkit-scrollbar-thumb {
+    background: rgba(95, 158, 160, 0.25);
+    border-radius: 10px;
+}
+
+.payment-row-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.18s ease;
+    gap: 12px;
+}
+
+.payment-row-card:hover {
+    border-color: #5F9EA0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
+
+.payment-row-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.payment-row-client {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: #0f172a;
+}
+
+.payment-row-sub {
+    font-size: 0.82rem;
+    color: #5F9EA0;
+    font-weight: 500;
+}
+
+.payment-row-date {
+    font-size: 0.74rem;
+    color: #94a3b8;
+}
+
+.payment-pill-badge {
+    background: #48a9a6;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.84rem;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 4px rgba(72, 169, 166, 0.25);
+}
+
+
 
 
 
