@@ -199,14 +199,28 @@ class ProCalendar {
             const dateIso = this.formatDateIso(d);
             const isToday = dateIso === todayIso;
 
-            bodyHtml += `<div class="day-grid-column ${isToday ? 'today' : ''}" data-date="${dateIso}">`;
+            // Déterminer si le jour est fermé dans les horaires du praticien
+            const scheduleMap = [6, 0, 1, 2, 3, 4, 5]; // 0 = Dimanche (index 6 dans schedule Lundi-Dimanche)
+            const daySchedIdx = scheduleMap[d.getDay()];
+            const daySchedule = window.app?.data?.schedule?.[daySchedIdx];
+            const isDayClosed = daySchedule ? !daySchedule.open : (d.getDay() === 0);
+
+            bodyHtml += `<div class="day-grid-column ${isToday ? 'today' : ''} ${isDayClosed ? 'closed-day' : ''}" data-date="${dateIso}">`;
             
             // Grid background hour lines
             for (let h = 7.5; h < 20.5; h += 0.5) {
                 const hour = Math.floor(h);
                 const min = h % 1 === 0 ? '00' : '30';
                 const timeStr = `${String(hour).padStart(2, '0')}:${min}`;
-                bodyHtml += `<div class="hour-line" data-time="${timeStr}" style="height: ${slotHalfHourHeight}px;" title="Cliquer pour ajouter un RDV"></div>`;
+                bodyHtml += `<div class="hour-line" data-time="${timeStr}" style="height: ${slotHalfHourHeight}px;" ${isDayClosed ? 'data-closed="true"' : 'title="Cliquer pour ajouter un RDV"'}></div>`;
+            }
+
+            if (isDayClosed) {
+                bodyHtml += `
+                    <div class="calendar-closed-day-watermark">
+                        <div class="closed-badge-chip"><i class="fa-solid fa-moon"></i> Journée fermée</div>
+                    </div>
+                `;
             }
 
             // Render Events for this day
@@ -287,6 +301,10 @@ class ProCalendar {
         this.container.querySelectorAll('.hour-line').forEach(slot => {
             slot.addEventListener('click', () => {
                 const column = slot.closest('.day-grid-column');
+                if (column?.classList.contains('closed-day')) {
+                    window.app?.showToast('Journée fermée : le cabinet ne prend pas de rendez-vous.', 'warning');
+                    return;
+                }
                 const date = column.getAttribute('data-date');
                 const time = slot.getAttribute('data-time');
                 this.onSlotClick({ date, time });

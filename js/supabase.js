@@ -272,18 +272,23 @@ class SupabaseService {
             const user = (await this.client.auth.getUser())?.data?.user;
             if (!user) return;
 
-            await this.client.from('cabinet_settings').upsert({
+            const updatePayload = {
                 id: user.id,
                 user_id: user.id,
-                address: address || '37 Avenue de Boutiny, 06530 Peymeinade',
-                phone: phone || '06 28 38 83 49',
-                email: email || user.email,
-                buffer_time: bufferTime !== undefined ? bufferTime : 15,
-                schedule: schedule,
-                profile_photo: profilePhoto || '',
-                practitioner_name: practitionerName || '',
                 updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' });
+            };
+            if (address !== undefined) updatePayload.address = address;
+            if (phone !== undefined) updatePayload.phone = phone;
+            if (email !== undefined) updatePayload.email = email;
+            if (bufferTime !== undefined) updatePayload.buffer_time = bufferTime;
+            if (schedule !== undefined) updatePayload.schedule = schedule;
+            if (profilePhoto !== undefined && profilePhoto !== null) updatePayload.profile_photo = profilePhoto;
+            if (practitionerName !== undefined && practitionerName !== null) updatePayload.practitioner_name = practitionerName;
+
+            const { error } = await this.client.from('cabinet_settings').upsert(updatePayload, { onConflict: 'user_id' });
+            if (error) {
+                console.warn('Upsert cabinet_settings error:', error);
+            }
         } catch (e) {
             console.warn('Sync settings failed:', e);
         }

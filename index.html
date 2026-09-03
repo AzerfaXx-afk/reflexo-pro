@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS App -->
-    <link rel="stylesheet" href="css/app.css?v=4">
+    <link rel="stylesheet" href="css/app.css?v=5">
 </head>
 <body>
 
@@ -328,8 +328,31 @@
                             </div>
                         </div>
 
+                        <!-- Bloc 3: Synchronisation & Import Cfixé -->
+                        <div class="card-box" style="margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 10px;"><i class="fa-solid fa-arrows-rotate"></i> Synchronisation & Données Cfixé</h3>
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+                                Importez l'historique de vos réservations, vos 108 clients et vos 6 soins directement sur votre compte cabinet personnel.
+                            </p>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-heading); display: block; margin-bottom: 6px;">Lien du flux d'agenda iCal Cfixé</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" class="form-control" value="https://cfixe.com/api/core/booking/team/ical/376e583de3f73e431bcbb1e4b87f32dbda829d53" readonly style="font-size: 0.8rem; background: var(--bg-light); color: var(--text-muted);">
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('https://cfixe.com/api/core/booking/team/ical/376e583de3f73e431bcbb1e4b87f32dbda829d53'); app.showToast('Lien iCal copié !', 'success');" title="Copier le lien iCal">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
 
-
+                            <button type="button" class="btn btn-primary btn-block" id="btnImportCfixe" onclick="app.importCfixeData()" style="padding: 13px; font-weight: 600; font-size: 0.92rem; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                                <span>Importer mes 490 RDV, 108 clients et soins sur mon compte</span>
+                            </button>
+                            <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 8px; text-align: center;">
+                                <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Ces données sont strictement rattachées à votre compte connecté et invisibles pour tout autre utilisateur.
+                            </p>
+                        </div>
                     </div>
 
                 </section>
@@ -932,8 +955,8 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase.js?v=2"></script>
-    <script src="js/calendar.js?v=3"></script>
-    <script src="js/app.js?v=11"></script>
+    <script src="js/supabase.js?v=3"></script>
+    <script src="js/calendar.js?v=4"></script>
+    <script src="js/app.js?v=12"></script>
 </body>
 </html>

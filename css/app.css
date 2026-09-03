@@ -878,6 +878,42 @@ input, select, textarea {
     background: rgba(95, 158, 160, 0.1);
 }
 
+.day-grid-column.closed-day {
+    background: repeating-linear-gradient(
+        -45deg,
+        rgba(241, 245, 249, 0.75),
+        rgba(241, 245, 249, 0.75) 12px,
+        rgba(255, 255, 255, 0.5) 12px,
+        rgba(255, 255, 255, 0.5) 24px
+    ) !important;
+    cursor: not-allowed;
+}
+
+.calendar-closed-day-watermark {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 4;
+}
+
+.closed-badge-chip {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .hour-line {
     height: 60px;
     border-bottom: 1px dashed rgba(0,0,0,0.06);

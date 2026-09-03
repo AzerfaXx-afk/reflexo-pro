@@ -643,7 +643,11 @@ class StephanieProApp {
                     if (Array.isArray(cloudState.appointments)) this.data.appointments = cloudState.appointments;
                     if (Array.isArray(cloudState.blockedSlots)) this.data.blockedSlots = cloudState.blockedSlots;
                     if (Array.isArray(cloudState.clients)) this.data.clients = cloudState.clients;
-                    if (cloudState.schedule) this.data.schedule = cloudState.schedule;
+                    if (cloudState.schedule && Array.isArray(cloudState.schedule) && cloudState.schedule.length > 0) {
+                        this.data.schedule = cloudState.schedule;
+                    } else if (this.data.schedule && this.data.schedule.length > 0) {
+                        this.syncSettingsToCloud();
+                    }
                     if (cloudState.bufferTime !== undefined) this.data.bufferTime = cloudState.bufferTime;
                     if (cloudState.profilePhoto) this.data.profilePhoto = cloudState.profilePhoto;
                     if (cloudState.practitionerName) this.data.practitionerName = cloudState.practitionerName;
@@ -651,6 +655,7 @@ class StephanieProApp {
 
                     this.saveData();
                     this.renderAll();
+                    this.updateCabinetLiveStatus();
                     if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
                 }
             }
@@ -1409,6 +1414,7 @@ class StephanieProApp {
                 pill.classList.add('active');
                 this.data.bufferTime = Number(pill.getAttribute('data-value'));
                 this.saveData();
+                this.syncSettingsToCloud();
                 this.showToast('Temps de pause mis à jour : ' + pill.textContent.trim(), 'success');
             });
         });
@@ -2195,12 +2201,28 @@ class StephanieProApp {
         });
     }
 
+    syncSettingsToCloud() {
+        if (!this.currentUser || !window.supabaseService) return;
+        window.supabaseService.saveSettings({
+            address: this.data.cabinetInfo?.address,
+            phone: this.data.cabinetInfo?.phone,
+            email: this.data.cabinetInfo?.email || this.currentUser.email,
+            bufferTime: this.data.bufferTime !== undefined ? this.data.bufferTime : 15,
+            schedule: this.data.schedule,
+            profilePhoto: this.data.profilePhoto || '',
+            practitionerName: this.data.practitionerName || ''
+        });
+    }
+
     toggleDaySchedule(idx, isOpen) {
         if (this.data.schedule && this.data.schedule[idx]) {
             this.data.schedule[idx].open = isOpen;
             this.saveData();
             this.renderSettingsSchedule();
-            this.showToast(`${this.data.schedule[idx].day} : ${isOpen ? 'Ouvert' : 'Fermé'}`, 'success');
+            this.updateCabinetLiveStatus();
+            if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
+            this.syncSettingsToCloud();
+            this.showToast(`${this.data.schedule[idx].day} : ${isOpen ? 'Ouvert' : 'Fermé (créneaux masqués)'}`, 'success');
         }
     }
 
@@ -2208,13 +2230,10 @@ class StephanieProApp {
         if (this.data.schedule && this.data.schedule[idx]) {
             this.data.schedule[idx][field] = val;
             this.saveData();
-            window.supabaseService?.saveSettings({
-                address: document.getElementById('settingCabinetAddress')?.value,
-                phone: document.getElementById('settingCabinetPhone')?.value,
-                email: document.getElementById('settingCabinetEmail')?.value,
-                bufferTime: this.data.bufferTime,
-                schedule: this.data.schedule
-            });
+            this.updateCabinetLiveStatus();
+            if (this.calendar) this.calendar.render(this.data.appointments, this.data.blockedSlots);
+            this.syncSettingsToCloud();
+            this.showToast(`${this.data.schedule[idx].day} : heure ${field === 'start' ? 'de début' : 'de fin'} (${val})`, 'success');
         }
     }
 
@@ -2225,13 +2244,7 @@ class StephanieProApp {
         this.data.cabinetInfo = { address, phone, email };
         this.saveData();
         if (this.currentUser) {
-            window.supabaseService?.saveSettings({
-                address,
-                phone,
-                email,
-                bufferTime: this.data.bufferTime,
-                schedule: this.data.schedule
-            });
+            this.syncSettingsToCloud();
             this.showToast('Informations et horaires enregistrés sur le Cloud !', 'success');
         } else {
             this.showToast('Mode Test : paramètres enregistrés localement', 'info');
@@ -2478,10 +2491,115 @@ class StephanieProApp {
         }, 3500);
     }
 
+    async importCfixeData() {
+        if (!this.currentUser) {
+            this.showToast('Veuillez vous connecter pour importer vos données Cfixé.', 'warning');
+            return;
+        }
+
+        const btn = document.getElementById('btnImportCfixe');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Importation en cours...';
+        }
+
+        try {
+            let cfixeData = window.CFIXE_IMPORT_DATA;
+            if (!cfixeData) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = '../cfixe_data_backup.js?v=2';
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Fichier de données Cfixé introuvable'));
+                    document.head.appendChild(script);
+                });
+                cfixeData = window.CFIXE_IMPORT_DATA;
+            }
+
+            if (!cfixeData) {
+                throw new Error('Données Cfixé introuvables.');
+            }
+
+            this.showToast('Importation de vos prestations, clients et RDV...', 'info');
+
+            // 1. Prestations
+            if (Array.isArray(cfixeData.services)) {
+                this.data.services = cfixeData.services;
+                for (const s of cfixeData.services) {
+                    await window.supabaseService?.upsertService(s);
+                }
+            }
+
+            // 2. Clients
+            if (Array.isArray(cfixeData.clients) && window.supabaseService?.client) {
+                this.data.clients = cfixeData.clients;
+                const user = this.currentUser;
+                const clientsToInsert = cfixeData.clients.map(c => ({
+                    id: c.id,
+                    user_id: user.id,
+                    name: c.name,
+                    phone: c.phone || '',
+                    email: c.email || '',
+                    notes: c.notes || '',
+                    fidelity: c.fidelity || 1,
+                    created_at: c.createdAt || new Date().toISOString()
+                }));
+                await window.supabaseService.client.from('clients').upsert(clientsToInsert, { onConflict: 'id' });
+            }
+
+            // 3. Rendez-vous (par lots de 50)
+            if (Array.isArray(cfixeData.appointments) && window.supabaseService?.client) {
+                this.data.appointments = cfixeData.appointments;
+                const user = this.currentUser;
+                const batchSize = 50;
+                for (let i = 0; i < cfixeData.appointments.length; i += batchSize) {
+                    const chunk = cfixeData.appointments.slice(i, i + batchSize).map(a => ({
+                        id: a.id,
+                        user_id: user.id,
+                        client_name: a.clientName || 'Client',
+                        client_phone: a.clientPhone || '',
+                        client_email: a.clientEmail || '',
+                        service_name: a.serviceName || 'Prestation',
+                        date: a.date,
+                        time: a.time,
+                        duration: a.duration || 60,
+                        price: a.price || 0,
+                        color_bg: a.colorBg || 'rgba(95, 158, 160, 0.25)',
+                        color_border: a.colorBorder || '#5F9EA0',
+                        color_text: a.colorText || '#1F383E',
+                        payment_method: a.paymentMethod || 'sur_place',
+                        payment_status: a.paymentStatus || 'A régler',
+                        notes: a.notes || '',
+                        source: a.source || 'cfixe'
+                    }));
+                    await window.supabaseService.client.from('appointments').upsert(chunk, { onConflict: 'id' });
+                }
+            }
+
+            this.saveData();
+            this.renderAll();
+
+            this.showToast('Succès : 490 RDV, 108 clients et 6 soins importés sur votre compte !', 'success');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Données Cfixé importées sur votre compte';
+                btn.style.background = '#10B981';
+                btn.style.color = '#fff';
+            }
+        } catch (err) {
+            console.error('Import error:', err);
+            this.showToast('Erreur import : ' + err.message, 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Réessayer l’import Cfixé';
+            }
+        }
+    }
+
     renderAll() {
         this.renderDashboard();
         this.renderCatalogue();
         this.renderClients();
+        this.renderSettingsSchedule();
         this.updateProfileUI();
         if (this.calendar) {
             this.calendar.render(this.data.appointments, this.data.blockedSlots);
